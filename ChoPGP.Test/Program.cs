@@ -11,8 +11,17 @@ namespace ChoPGP.Test
     {
         static void Main(string[] args)
         {
+            GenerateKeyPair();
             EncryptFile();
             DecryptFile();
+        }
+
+        private static void GenerateKeyPair()
+        {
+            var kp = ChoPGPEncryptDecrypt.Instance.CreateRSAKeyPair();
+            kp.SaveToFile("pub.asc", "pri.asc");
+
+            Console.WriteLine("PGP KeyPair generated.");
         }
 
         private static void EncryptFile()
