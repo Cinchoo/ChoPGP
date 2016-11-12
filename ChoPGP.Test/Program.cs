@@ -18,8 +18,8 @@ namespace ChoPGP.Test
 
         private static void GenerateKeyPair()
         {
-            var kp = ChoPGPEncryptDecrypt.Instance.CreateRSAKeyPair();
-            kp.SaveToFile("pub.asc", "pri.asc");
+            using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
+                pgp.CreateRSAKeyPair("mark@gmail.com", "Test123").SaveToFile("pub.asc", "pri.asc");
 
             Console.WriteLine("PGP KeyPair generated.");
         }
