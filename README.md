@@ -28,14 +28,10 @@ Generate Public/Private Keyring
 ``` csharp
     using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
         var key = pgp.CreateRSAKeyPair("mark@gmail.com", "Test123");
-
-    Console.WriteLine("PGP KeyPair generated.");
 ```
 Generate And Save Public/Private Keyring
 
 ``` csharp
     using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
-        var key = pgp.CreateRSAKeyPair("mark@gmail.com", "Test123").SaveToFile("pub.asc", "pri.asc");
-
-    Console.WriteLine("PGP KeyPair generated.");
+        pgp.CreateRSAKeyPair("mark@gmail.com", "Test123").SaveToFile("pub.asc", "pri.asc");
 ```
