@@ -28,7 +28,7 @@ namespace ChoPGP.Test
         {
             using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
             {
-                pgp.EncryptFileAndSign("SampleData.txt", "SampleData.PGP", "Pub.asc", "Pri.asc", "Test123", true);
+                pgp.EncryptFile("SampleData.txt", "SampleData.PGP", "Pub.asc", true, false);
                 Console.WriteLine("PGP Encryption done.");
             }
         }
