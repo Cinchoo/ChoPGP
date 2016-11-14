@@ -180,10 +180,10 @@ namespace Cinchoo.PGP
 
         #region Encrypt and Sign
 
-        public async Task EncryptFileAndSign(string inputFilePath, string outputFilePath, string publicKeyFilePath,
-            bool armor, bool withIntegrityCheck)
+        public async Task EncryptFileAndSignAsync(string inputFilePath, string outputFilePath, string publicKeyFilePath, string privateKeyFilePath,
+            string passPhrase, bool armor)
         {
-            await Task.Run(() => EncryptFileAndSign(inputFilePath, outputFilePath, publicKeyFilePath, armor, withIntegrityCheck));
+            await Task.Run(() => EncryptFileAndSign(inputFilePath, outputFilePath, publicKeyFilePath, privateKeyFilePath, passPhrase, armor));
         }
 
         /// <summary>
@@ -308,10 +308,9 @@ namespace Cinchoo.PGP
 
         #region Decrypt
 
-        public async Task DecryptFile(string inputFilePath, string outputFilePath, string publicKeyFilePath,
-            bool armor, bool withIntegrityCheck)
+        public async Task DecryptFileAsync(string inputFilePath, string outputFilePath, string privateKeyFilePath, string passPhrase)
         {
-            await Task.Run(() => DecryptFile(inputFilePath, outputFilePath, publicKeyFilePath, armor, withIntegrityCheck));
+            await Task.Run(() => DecryptFile(inputFilePath, outputFilePath, privateKeyFilePath, passPhrase));
         }
 
         /// <summary>
