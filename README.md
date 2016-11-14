@@ -11,7 +11,7 @@ To PGP encrypt a file
 ``` csharp
     using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
     {
-        pgp.EncryptFile("SampleData.txt", "SampleData.PGP", "Sample_Pub.asc", true, false);
+        pgp.EncryptFile("SampleData.txt", "SampleData.PGP", "Pub.asc", true, false);
     }
 ```
 
@@ -20,18 +20,12 @@ To PGP decrypt a file
 ``` csharp
     using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
     {
-        pgp.DecryptFile("SampleData.PGP", "SampleData.OUT", "Sample_Pri.asc", "Test123");
+        pgp.DecryptFile("SampleData.PGP", "SampleData.OUT", "Pri.asc", "Test123");
     }
 ```
 Generate Public/Private Keyring
 
 ``` csharp
     using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
-        var key = pgp.CreateRSAKeyPair("mark@gmail.com", "Test123");
-```
-Generate And Save Public/Private Keyring
-
-``` csharp
-    using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
-        pgp.CreateRSAKeyPair("mark@gmail.com", "Test123").SaveToFile("pub.asc", "pri.asc");
+        pgp.GenerateKey("pub.asc", "pri.asc", "mark@gmail.com", "Test123");
 ```
