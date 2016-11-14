@@ -35,7 +35,7 @@ namespace Cinchoo.PGP
                 throw new ArgumentException("PublicKeyFilePath");
             if (String.IsNullOrEmpty(privateKeyFilePath))
                 throw new ArgumentException("PrivateKeyFilePath");
-            if (String.IsNullOrEmpty(passPhrase))
+            if (passPhrase == null)
                 throw new ArgumentNullException("Invalid Pass Phrase.");
 
             if (!File.Exists(publicKeyFilePath))

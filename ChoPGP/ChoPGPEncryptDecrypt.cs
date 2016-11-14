@@ -42,47 +42,24 @@ namespace Cinchoo.PGP
         public void SaveToFile(string publicKeyFilePath = null, string privateKeyFilePath = null)
         {
             if (!String.IsNullOrWhiteSpace(publicKeyFilePath))
-                File.WriteAllText(publicKeyFilePath, PublicKeyRingText);
+                File.WriteAllText(publicKeyFilePath, PublicKey);
 
             if (!String.IsNullOrWhiteSpace(privateKeyFilePath))
-                File.WriteAllText(privateKeyFilePath, PrivateKeyRingText);
+                File.WriteAllText(privateKeyFilePath, PrivateKey);
         }
 
         public void SaveToFile(Stream publicKeyStream = null, Stream privateKeyStream = null)
         {
-            string publicKeyText = String.Format(@"-----BEGIN PGP PUBLIC KEY BLOCK-----{0}Version: ChoPGP v{2}{0}{0}{1}{0}{0}-----END PGP PUBLIC KEY BLOCK-----",
-                Environment.NewLine, PublicKey, Assembly.GetExecutingAssembly().GetName().Version);
-            string privateKeyText = String.Format(@"-----BEGIN PGP PRIVATE KEY BLOCK-----{0}Version: ChoPGP v{2}{0}{0}{1}{0}{0}-----END PGP PRIVATE KEY BLOCK-----",
-                Environment.NewLine, PrivateKey, Assembly.GetExecutingAssembly().GetName().Version);
-
             if (publicKeyStream != null)
             {
                 using (StreamWriter sw = new StreamWriter(publicKeyStream))
-                    sw.Write(PublicKeyRingText);
+                    sw.Write(PublicKey);
             }
 
             if (privateKeyStream != null)
             {
                 using (StreamWriter sw = new StreamWriter(privateKeyStream))
-                    sw.Write(PrivateKeyRingText);
-            }
-        }
-
-        private string PublicKeyRingText
-        {
-            get
-            {
-                return String.Format(@"-----BEGIN PGP PUBLIC KEY BLOCK-----{0}Version: ChoPGP v{2}{0}{0}{1}{0}{0}-----END PGP PUBLIC KEY BLOCK-----",
-                    Environment.NewLine, PublicKey, Assembly.GetExecutingAssembly().GetName().Version);
-            }
-        }
-
-        private string PrivateKeyRingText
-        {
-            get
-            {
-                return String.Format(@"-----BEGIN PGP PRIVATE KEY BLOCK-----{0}Version: ChoPGP v{2}{0}{0}{1}{0}{0}-----END PGP PRIVATE KEY BLOCK-----",
-                                Environment.NewLine, PrivateKey, Assembly.GetExecutingAssembly().GetName().Version);
+                    sw.Write(PrivateKey);
             }
         }
     }
@@ -206,8 +183,8 @@ namespace Cinchoo.PGP
                 throw new ArgumentException("PublicKeyFilePath");
             if (String.IsNullOrEmpty(privateKeyFilePath))
                 throw new ArgumentException("PrivateKeyFilePath");
-            if (String.IsNullOrEmpty(passPhrase))
-                throw new ArgumentNullException("Invalid Pass Phrase.");
+            if (passPhrase == null)
+                passPhrase = String.Empty;
 
             if (!File.Exists(inputFilePath))
                 throw new FileNotFoundException(String.Format("Input file [{0}] does not exist.", inputFilePath));
@@ -328,8 +305,8 @@ namespace Cinchoo.PGP
                 throw new ArgumentException("OutputFilePath");
             if (String.IsNullOrEmpty(privateKeyFilePath))
                 throw new ArgumentException("PrivateKeyFilePath");
-            if (String.IsNullOrEmpty(passPhrase))
-                throw new ArgumentNullException("Invalid Pass Phrase.");
+            if (passPhrase == null)
+                passPhrase = String.Empty;
 
             if (!File.Exists(inputFilePath))
                 throw new FileNotFoundException(String.Format("Encrypted File [{0}] not found.", inputFilePath));
@@ -357,8 +334,8 @@ namespace Cinchoo.PGP
                 throw new ArgumentException("outputStream");
             if (privateKeyStream == null)
                 throw new ArgumentException("privateKeyStream");
-            if (String.IsNullOrEmpty(passPhrase))
-                throw new ArgumentNullException("Invalid Pass Phrase.");
+            if (passPhrase == null)
+                passPhrase = String.Empty;
 
             PgpObjectFactory objFactory = new PgpObjectFactory(PgpUtilities.GetDecoderStream(inputStream));
             // find secret key
@@ -444,141 +421,86 @@ namespace Cinchoo.PGP
 
         #endregion Decrypt
 
-        public ChoRSAKeyPair CreateRSAKeyPair(string identity = null, string password = null)
+        public async Task GenerateKeyAsync(string publicKeyFilePath, string privateKeyFilePath, string username = null, string password = null)
+        {
+            await Task.Run(() => GenerateKey(publicKeyFilePath, privateKeyFilePath, username, password));
+        }
+
+        public void GenerateKey(string publicKeyFilePath, string privateKeyFilePath, string username = null, string password = null)
+        {
+            if (String.IsNullOrEmpty(publicKeyFilePath))
+                throw new ArgumentException("PublicKeyFilePath");
+            if (String.IsNullOrEmpty(privateKeyFilePath))
+                throw new ArgumentException("PrivateKeyFilePath");
+
+            using (Stream pubs = File.Open(publicKeyFilePath, FileMode.OpenOrCreate))
+            using (Stream pris = File.Open(privateKeyFilePath, FileMode.OpenOrCreate))
+                GenerateKey(pubs, pris, username, password);
+        }
+
+        public void GenerateKey(Stream publicKeyStream, Stream privateKeyStream, string username = null, string password = null)
         {
             password = password == null ? string.Empty : password;
-            identity = identity == null ? string.Empty : identity;
+            password = password == null ? string.Empty : password;
 
-            PgpKeyRingGenerator krgen = GenerateKeyRingGenerator(identity, password);
+            IAsymmetricCipherKeyPairGenerator kpg = new RsaKeyPairGenerator();
+            kpg.Init(new RsaKeyGenerationParameters(BigInteger.ValueOf(0x13), new SecureRandom(), 1024, 8));
+            AsymmetricCipherKeyPair kp = kpg.GenerateKeyPair();
 
-            // Generate public key ring, dump to file.
-            PgpPublicKeyRing pkr = krgen.GeneratePublicKeyRing();
-            PgpSecretKeyRing pkr1 = krgen.GenerateSecretKeyRing();
-
-            return new ChoRSAKeyPair(String.Join(Environment.NewLine, Split(Convert.ToBase64String(pkr.GetPublicKey().GetEncoded()), 64)),
-                String.Join(Environment.NewLine, Split(Convert.ToBase64String(pkr1.GetSecretKey().GetEncoded()), 64)));
+            ExportKeyPair(privateKeyStream, publicKeyStream, kp.Public, kp.Private, username, password.ToCharArray(), true);
         }
 
-        private static PgpKeyRingGenerator GenerateKeyRingGenerator(string identity, string password)
+        private static void ExportKeyPair(
+                    Stream secretOut,
+                    Stream publicOut,
+                    AsymmetricKeyParameter publicKey,
+                    AsymmetricKeyParameter privateKey,
+                    string identity,
+                    char[] passPhrase,
+                    bool armor)
         {
+            if (secretOut == null)
+                throw new ArgumentException("secretOut");
+            if (publicOut == null)
+                throw new ArgumentException("publicOut");
 
-            KeyRingParams keyRingParams = new KeyRingParams();
-            keyRingParams.Password = password;
-            keyRingParams.Identity = identity;
-            keyRingParams.PrivateKeyEncryptionAlgorithm = SymmetricKeyAlgorithmTag.Aes128;
-            keyRingParams.SymmetricAlgorithms = new SymmetricKeyAlgorithmTag[] {
-            SymmetricKeyAlgorithmTag.Aes256,
-            SymmetricKeyAlgorithmTag.Aes192,
-            SymmetricKeyAlgorithmTag.Aes128
-        };
+            if (armor)
+            {
+                secretOut = new ArmoredOutputStream(secretOut);
+            }
 
-            keyRingParams.HashAlgorithms = new HashAlgorithmTag[] {
-            HashAlgorithmTag.Sha256,
-            HashAlgorithmTag.Sha1,
-            HashAlgorithmTag.Sha384,
-            HashAlgorithmTag.Sha512,
-            HashAlgorithmTag.Sha224,
-        };
-
-            IAsymmetricCipherKeyPairGenerator generator
-                = GeneratorUtilities.GetKeyPairGenerator("RSA");
-            generator.Init(keyRingParams.RsaParams);
-
-            /* Create the master (signing-only) key. */
-            PgpKeyPair masterKeyPair = new PgpKeyPair(
-                PublicKeyAlgorithmTag.RsaSign,
-                generator.GenerateKeyPair(),
-                DateTime.UtcNow);
-
-            PgpSignatureSubpacketGenerator masterSubpckGen
-                = new PgpSignatureSubpacketGenerator();
-            masterSubpckGen.SetKeyFlags(false, PgpKeyFlags.CanSign
-                | PgpKeyFlags.CanCertify);
-            masterSubpckGen.SetPreferredSymmetricAlgorithms(false,
-                (from a in keyRingParams.SymmetricAlgorithms
-                 select (int)a).ToArray());
-            masterSubpckGen.SetPreferredHashAlgorithms(false,
-                (from a in keyRingParams.HashAlgorithms
-                 select (int)a).ToArray());
-
-            /* Create a signing and encryption key for daily use. */
-            PgpKeyPair encKeyPair = new PgpKeyPair(
-                PublicKeyAlgorithmTag.RsaGeneral,
-                generator.GenerateKeyPair(),
-                DateTime.UtcNow);
-
-            PgpSignatureSubpacketGenerator encSubpckGen = new PgpSignatureSubpacketGenerator();
-            encSubpckGen.SetKeyFlags(false, PgpKeyFlags.CanEncryptCommunications | PgpKeyFlags.CanEncryptStorage);
-
-            masterSubpckGen.SetPreferredSymmetricAlgorithms(false,
-                (from a in keyRingParams.SymmetricAlgorithms
-                 select (int)a).ToArray());
-            masterSubpckGen.SetPreferredHashAlgorithms(false,
-                (from a in keyRingParams.HashAlgorithms
-                 select (int)a).ToArray());
-
-            /* Create the key ring. */
-            PgpKeyRingGenerator keyRingGen = new PgpKeyRingGenerator(
+            PgpSecretKey secretKey = new PgpSecretKey(
                 PgpSignature.DefaultCertification,
-                masterKeyPair,
-                keyRingParams.Identity,
-                keyRingParams.PrivateKeyEncryptionAlgorithm.Value,
-                keyRingParams.GetPassword(),
-                true,
-                masterSubpckGen.Generate(),
+                PublicKeyAlgorithmTag.RsaGeneral,
+                publicKey,
+                privateKey,
+                DateTime.Now,
+                identity,
+                SymmetricKeyAlgorithmTag.Cast5,
+                passPhrase,
                 null,
-                new SecureRandom());
+                null,
+                new SecureRandom()
+                //                ,"BC"
+                );
 
-            /* Add encryption subkey. */
-            keyRingGen.AddSubKey(encKeyPair, encSubpckGen.Generate(), null);
+            secretKey.Encode(secretOut);
 
-            return keyRingGen;
+            secretOut.Close();
 
-        }
-
-        // Define other methods and classes here
-        class KeyRingParams
-        {
-
-            public SymmetricKeyAlgorithmTag? PrivateKeyEncryptionAlgorithm { get; set; }
-            public SymmetricKeyAlgorithmTag[] SymmetricAlgorithms { get; set; }
-            public HashAlgorithmTag[] HashAlgorithms { get; set; }
-            public RsaKeyGenerationParameters RsaParams { get; set; }
-            public string Identity { get; set; }
-            public string Password { get; set; }
-
-            public char[] GetPassword()
+            if (armor)
             {
-                return Password == null ? new char[] { } : Password.ToCharArray();
+                publicOut = new ArmoredOutputStream(publicOut);
             }
 
-            public KeyRingParams()
-            {
-                RsaParams = new RsaKeyGenerationParameters(BigInteger.ValueOf(0x10001), new SecureRandom(), 2048, 12);
-            }
+            PgpPublicKey key = secretKey.PublicKey;
 
+            key.Encode(publicOut);
+
+            publicOut.Close();
         }
 
         #region Private helpers
-
-        private static IEnumerable<string> Split(string str, int chunkSize)
-        {
-            if (str == null)
-                yield break;
-
-            if (chunkSize <= 0)
-                chunkSize = 1;
-
-            for (int i = 0; i < str.Length; i += chunkSize)
-                yield return str.Substring(i, Math.Min(chunkSize, str.Length - i));
-
-            //double length = str.Length;
-            //double size = chunkSize;
-            //int count = (int)Math.Ceiling(length / size);
-
-            //return Enumerable.Range(0, count)
-            //    .Select(i => str.Substring(i * chunkSize, chunkSize));
-        }
 
         /*
         * A simple routine that opens a key ring file and loads the first available key suitable for encryption.

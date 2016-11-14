@@ -19,7 +19,7 @@ namespace ChoPGP.Test
         private static void GenerateKeyPair()
         {
             using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
-                pgp.CreateRSAKeyPair("mark@gmail.com", "Test123").SaveToFile("pub.asc", "pri.asc");
+                pgp.GenerateKey("pub.asc", "pri.asc", "mark@gmail.com", "Test123");
 
             Console.WriteLine("PGP KeyPair generated.");
         }
@@ -28,7 +28,7 @@ namespace ChoPGP.Test
         {
             using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
             {
-                pgp.EncryptFile("SampleData.txt", "SampleData.PGP", "Sample_Pub.asc", true, false);
+                pgp.EncryptFileAndSign("SampleData.txt", "SampleData.PGP", "Pub.asc", "Pri.asc", "Test123", true);
                 Console.WriteLine("PGP Encryption done.");
             }
         }
@@ -37,7 +37,7 @@ namespace ChoPGP.Test
         {
             using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
             {
-                pgp.DecryptFile("SampleData.PGP", "SampleData.OUT", "Sample_Pri.asc", "Test123");
+                pgp.DecryptFile("SampleData.PGP", "SampleData.OUT", "Pri.asc", "Test123");
                 Console.WriteLine("PGP Decryption done.");
             }
         }
