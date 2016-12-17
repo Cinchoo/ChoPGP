@@ -20,50 +20,6 @@ using System.Threading.Tasks;
 
 namespace Cinchoo.PGP
 {
-    public class ChoRSAKeyPair
-    {
-        public string PublicKey
-        {
-            get;
-            private set;
-        }
-        public string PrivateKey
-        {
-            get;
-            private set;
-        }
-
-        internal ChoRSAKeyPair(string publicKey, string privateKey)
-        {
-            PublicKey = publicKey;
-            PrivateKey = privateKey;
-        }
-
-        public void SaveToFile(string publicKeyFilePath = null, string privateKeyFilePath = null)
-        {
-            if (!String.IsNullOrWhiteSpace(publicKeyFilePath))
-                File.WriteAllText(publicKeyFilePath, PublicKey);
-
-            if (!String.IsNullOrWhiteSpace(privateKeyFilePath))
-                File.WriteAllText(privateKeyFilePath, PrivateKey);
-        }
-
-        public void SaveToFile(Stream publicKeyStream = null, Stream privateKeyStream = null)
-        {
-            if (publicKeyStream != null)
-            {
-                using (StreamWriter sw = new StreamWriter(publicKeyStream))
-                    sw.Write(PublicKey);
-            }
-
-            if (privateKeyStream != null)
-            {
-                using (StreamWriter sw = new StreamWriter(privateKeyStream))
-                    sw.Write(PrivateKey);
-            }
-        }
-    }
-
     public class ChoPGPEncryptDecrypt : IDisposable
     {
         public static readonly ChoPGPEncryptDecrypt Instance = new ChoPGPEncryptDecrypt();
