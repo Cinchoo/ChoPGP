@@ -377,12 +377,14 @@ namespace Cinchoo.PGP
 
         #endregion Decrypt
 
-        public async Task GenerateKeyAsync(string publicKeyFilePath, string privateKeyFilePath, string username = null, string password = null)
+        #region GenerateKey
+
+        public async Task GenerateKeyAsync(string publicKeyFilePath, string privateKeyFilePath, string username = null, string password = null, int strength = 1024, int certainty = 8)
         {
-            await Task.Run(() => GenerateKey(publicKeyFilePath, privateKeyFilePath, username, password));
+            await Task.Run(() => GenerateKey(publicKeyFilePath, privateKeyFilePath, username, password, strength, certainty));
         }
 
-        public void GenerateKey(string publicKeyFilePath, string privateKeyFilePath, string username = null, string password = null)
+        public void GenerateKey(string publicKeyFilePath, string privateKeyFilePath, string username = null, string password = null, int strength = 1024, int certainty = 8)
         {
             if (String.IsNullOrEmpty(publicKeyFilePath))
                 throw new ArgumentException("PublicKeyFilePath");
@@ -391,20 +393,24 @@ namespace Cinchoo.PGP
 
             using (Stream pubs = File.Open(publicKeyFilePath, FileMode.OpenOrCreate))
             using (Stream pris = File.Open(privateKeyFilePath, FileMode.OpenOrCreate))
-                GenerateKey(pubs, pris, username, password);
+                GenerateKey(pubs, pris, username, password, strength, certainty);
         }
 
-        public void GenerateKey(Stream publicKeyStream, Stream privateKeyStream, string username = null, string password = null)
+        public void GenerateKey(Stream publicKeyStream, Stream privateKeyStream, string username = null, string password = null, int strength = 1024, int certainty = 8)
         {
-            password = password == null ? string.Empty : password;
+            username = username == null ? string.Empty : username;
             password = password == null ? string.Empty : password;
 
             IAsymmetricCipherKeyPairGenerator kpg = new RsaKeyPairGenerator();
-            kpg.Init(new RsaKeyGenerationParameters(BigInteger.ValueOf(0x13), new SecureRandom(), 1024, 8));
+            kpg.Init(new RsaKeyGenerationParameters(BigInteger.ValueOf(0x13), new SecureRandom(), strength, certainty));
             AsymmetricCipherKeyPair kp = kpg.GenerateKeyPair();
 
             ExportKeyPair(privateKeyStream, publicKeyStream, kp.Public, kp.Private, username, password.ToCharArray(), true);
         }
+
+        #endregion GenerateKey
+
+        #region Private helpers
 
         private static void ExportKeyPair(
                     Stream secretOut,
@@ -455,8 +461,6 @@ namespace Cinchoo.PGP
 
             publicOut.Close();
         }
-
-        #region Private helpers
 
         /*
         * A simple routine that opens a key ring file and loads the first available key suitable for encryption.
