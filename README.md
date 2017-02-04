@@ -10,6 +10,11 @@ To install Cinchoo PGP, run the following command in the Package Manager Console
 
     PM> Install-Package ChoPGP
 
+Add namespace to the program
+
+``` csharp
+    using Cinchoo.PGP
+```
 # How to use
 
 To PGP encrypt a file
