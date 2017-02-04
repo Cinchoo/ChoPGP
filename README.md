@@ -4,6 +4,12 @@ PGP wrapper library for .NET
 
 Simple, intutive PGP wrapper library for .NET. Extremely clean, flexible, and easy to use. 
 
+## Install
+
+To install Cinchoo PGP, run the following command in the Package Manager Console
+
+    PM> Install-Package ChoPGP
+
 # How to use
 
 To PGP encrypt a file
