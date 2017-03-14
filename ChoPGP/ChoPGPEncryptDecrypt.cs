@@ -26,7 +26,25 @@ namespace Cinchoo.PGP
 
         private const int BufferSize = 0x10000;
 
-        public CompressionAlgorithmTag CompressionAlgorithmTag
+        public CompressionAlgorithmTag CompressionAlgorithm
+        {
+            get;
+            set;
+        }
+
+        public SymmetricKeyAlgorithmTag SymmetricKeyAlgorithm
+        {
+            get;
+            set;
+        }
+
+        public int PgpSignatureType
+        {
+            get;
+            set;
+        }
+
+        public PublicKeyAlgorithmTag PublicKeyAlgorithm
         {
             get;
             set;
@@ -36,7 +54,10 @@ namespace Cinchoo.PGP
 
         public ChoPGPEncryptDecrypt()
         {
-            CompressionAlgorithmTag = CompressionAlgorithmTag.Zip;
+            CompressionAlgorithm = CompressionAlgorithmTag.Zip;
+            SymmetricKeyAlgorithm = SymmetricKeyAlgorithmTag.TripleDes;
+            PgpSignatureType = PgpSignature.DefaultCertification;
+            PublicKeyAlgorithm = PublicKeyAlgorithmTag.RsaGeneral;
         }
 
         #endregion Constructor
@@ -44,7 +65,7 @@ namespace Cinchoo.PGP
         #region Encrypt
 
         public async Task EncryptFileAsync(string inputFilePath, string outputFilePath, string publicKeyFilePath,
-            bool armor, bool withIntegrityCheck)
+            bool armor = true, bool withIntegrityCheck = true)
         {
             await Task.Run(() => EncryptFile(inputFilePath, outputFilePath, publicKeyFilePath, armor, withIntegrityCheck));
         }
@@ -58,7 +79,7 @@ namespace Cinchoo.PGP
         /// <param name="armor"></param>
         /// <param name="withIntegrityCheck"></param>
         public void EncryptFile(string inputFilePath, string outputFilePath, string publicKeyFilePath,
-            bool armor, bool withIntegrityCheck)
+            bool armor = true, bool withIntegrityCheck = true)
         {
             if (String.IsNullOrEmpty(inputFilePath))
                 throw new ArgumentException("InputFilePath");
@@ -76,11 +97,11 @@ namespace Cinchoo.PGP
             {
                 using (MemoryStream @out = new MemoryStream())
                 {
-                    PgpCompressedDataGenerator comData = new PgpCompressedDataGenerator(CompressionAlgorithmTag);
+                    PgpCompressedDataGenerator comData = new PgpCompressedDataGenerator(CompressionAlgorithm);
                     PgpUtilities.WriteFileToLiteralData(comData.Open(@out), PgpLiteralData.Binary, new FileInfo(inputFilePath));
                     comData.Close();
 
-                    PgpEncryptedDataGenerator pk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5, withIntegrityCheck, new SecureRandom());
+                    PgpEncryptedDataGenerator pk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithm, withIntegrityCheck, new SecureRandom());
                     pk.AddMethod(ReadPublicKey(pkStream));
 
                     byte[] bytes = @out.ToArray();
@@ -114,9 +135,9 @@ namespace Cinchoo.PGP
         #region Encrypt and Sign
 
         public async Task EncryptFileAndSignAsync(string inputFilePath, string outputFilePath, string publicKeyFilePath, string privateKeyFilePath,
-            string passPhrase, bool armor)
+            string passPhrase, bool armor = true, bool withIntegrityCheck = true)
         {
-            await Task.Run(() => EncryptFileAndSign(inputFilePath, outputFilePath, publicKeyFilePath, privateKeyFilePath, passPhrase, armor));
+            await Task.Run(() => EncryptFileAndSign(inputFilePath, outputFilePath, publicKeyFilePath, privateKeyFilePath, passPhrase, armor, withIntegrityCheck));
         }
 
         /// <summary>
@@ -129,7 +150,7 @@ namespace Cinchoo.PGP
         /// <param name="passPhrase"></param>
         /// <param name="armor"></param>
         public void EncryptFileAndSign(string inputFilePath, string outputFilePath, string publicKeyFilePath,
-            string privateKeyFilePath, string passPhrase, bool armor)
+            string privateKeyFilePath, string passPhrase, bool armor = true, bool withIntegrityCheck = true)
         {
             if (String.IsNullOrEmpty(inputFilePath))
                 throw new ArgumentException("InputFilePath");
@@ -160,17 +181,17 @@ namespace Cinchoo.PGP
                 {
                     using (ArmoredOutputStream armoredOutputStream = new ArmoredOutputStream(outputStream))
                     {
-                        OutputEncrypted(inputFilePath, armoredOutputStream, encryptionKeys);
+                        OutputEncrypted(inputFilePath, armoredOutputStream, encryptionKeys, withIntegrityCheck);
                     }
                 }
                 else
-                    OutputEncrypted(inputFilePath, outputStream, encryptionKeys);
+                    OutputEncrypted(inputFilePath, outputStream, encryptionKeys, withIntegrityCheck);
             }
         }
 
-        private static void OutputEncrypted(string inputFilePath, Stream outputStream, ChoPGPEncryptionKeys encryptionKeys)
+        private void OutputEncrypted(string inputFilePath, Stream outputStream, ChoPGPEncryptionKeys encryptionKeys, bool withIntegrityCheck)
         {
-            using (Stream encryptedOut = ChainEncryptedOut(outputStream, encryptionKeys))
+            using (Stream encryptedOut = ChainEncryptedOut(outputStream, encryptionKeys, withIntegrityCheck))
             {
                 FileInfo unencryptedFileInfo = new FileInfo(inputFilePath);
                 using (Stream compressedOut = ChainCompressedOut(encryptedOut))
@@ -188,7 +209,7 @@ namespace Cinchoo.PGP
             }
         }
 
-        private static void WriteOutputAndSign(Stream compressedOut, Stream literalOut, FileStream inputFilePath, PgpSignatureGenerator signatureGenerator)
+        private void WriteOutputAndSign(Stream compressedOut, Stream literalOut, FileStream inputFilePath, PgpSignatureGenerator signatureGenerator)
         {
             int length = 0;
             byte[] buf = new byte[BufferSize];
@@ -200,27 +221,27 @@ namespace Cinchoo.PGP
             signatureGenerator.Generate().Encode(compressedOut);
         }
 
-        private static Stream ChainEncryptedOut(Stream outputStream, ChoPGPEncryptionKeys encryptionKeys)
+        private Stream ChainEncryptedOut(Stream outputStream, ChoPGPEncryptionKeys encryptionKeys, bool withIntegrityCheck)
         {
             PgpEncryptedDataGenerator encryptedDataGenerator;
-            encryptedDataGenerator = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.TripleDes, new SecureRandom());
+            encryptedDataGenerator = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithm, withIntegrityCheck, new SecureRandom());
             encryptedDataGenerator.AddMethod(encryptionKeys.PublicKey);
             return encryptedDataGenerator.Open(outputStream, new byte[BufferSize]);
         }
 
-        private static Stream ChainCompressedOut(Stream encryptedOut)
+        private Stream ChainCompressedOut(Stream encryptedOut)
         {
             PgpCompressedDataGenerator compressedDataGenerator = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
             return compressedDataGenerator.Open(encryptedOut);
         }
 
-        private static Stream ChainLiteralOut(Stream compressedOut, FileInfo file)
+        private Stream ChainLiteralOut(Stream compressedOut, FileInfo file)
         {
             PgpLiteralDataGenerator pgpLiteralDataGenerator = new PgpLiteralDataGenerator();
             return pgpLiteralDataGenerator.Open(compressedOut, PgpLiteralData.Binary, file);
         }
 
-        private static PgpSignatureGenerator InitSignatureGenerator(Stream compressedOut, ChoPGPEncryptionKeys encryptionKeys)
+        private PgpSignatureGenerator InitSignatureGenerator(Stream compressedOut, ChoPGPEncryptionKeys encryptionKeys)
         {
             PublicKeyAlgorithmTag tag = encryptionKeys.SecretKey.PublicKey.Algorithm;
             PgpSignatureGenerator pgpSignatureGenerator = new PgpSignatureGenerator(tag, HashAlgorithmTag.Sha1);
@@ -396,7 +417,7 @@ namespace Cinchoo.PGP
                 GenerateKey(pubs, pris, username, password, strength, certainty);
         }
 
-        public void GenerateKey(Stream publicKeyStream, Stream privateKeyStream, string username = null, string password = null, int strength = 1024, int certainty = 8)
+        public void GenerateKey(Stream publicKeyStream, Stream privateKeyStream, string username = null, string password = null, int strength = 1024, int certainty = 8, bool armor = true)
         {
             username = username == null ? string.Empty : username;
             password = password == null ? string.Empty : password;
@@ -405,14 +426,14 @@ namespace Cinchoo.PGP
             kpg.Init(new RsaKeyGenerationParameters(BigInteger.ValueOf(0x13), new SecureRandom(), strength, certainty));
             AsymmetricCipherKeyPair kp = kpg.GenerateKeyPair();
 
-            ExportKeyPair(privateKeyStream, publicKeyStream, kp.Public, kp.Private, username, password.ToCharArray(), true);
+            ExportKeyPair(privateKeyStream, publicKeyStream, kp.Public, kp.Private, username, password.ToCharArray(), armor);
         }
 
         #endregion GenerateKey
 
         #region Private helpers
 
-        private static void ExportKeyPair(
+        private void ExportKeyPair(
                     Stream secretOut,
                     Stream publicOut,
                     AsymmetricKeyParameter publicKey,
@@ -432,13 +453,13 @@ namespace Cinchoo.PGP
             }
 
             PgpSecretKey secretKey = new PgpSecretKey(
-                PgpSignature.DefaultCertification,
-                PublicKeyAlgorithmTag.RsaGeneral,
+                PgpSignatureType,
+                PublicKeyAlgorithm,
                 publicKey,
                 privateKey,
                 DateTime.Now,
                 identity,
-                SymmetricKeyAlgorithmTag.Cast5,
+                SymmetricKeyAlgorithm,
                 passPhrase,
                 null,
                 null,
