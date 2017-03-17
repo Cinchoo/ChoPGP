@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 
 namespace Cinchoo.PGP
 {
+    public enum ChoPGPFileType { Binary, Text, UTF8 }
     public class ChoPGPEncryptDecrypt : IDisposable
     {
         public static readonly ChoPGPEncryptDecrypt Instance = new ChoPGPEncryptDecrypt();
@@ -49,6 +50,11 @@ namespace Cinchoo.PGP
             get;
             set;
         }
+        public ChoPGPFileType FileType
+        {
+            get;
+            set;
+        }
 
         #region Constructor
 
@@ -58,6 +64,7 @@ namespace Cinchoo.PGP
             SymmetricKeyAlgorithm = SymmetricKeyAlgorithmTag.TripleDes;
             PgpSignatureType = PgpSignature.DefaultCertification;
             PublicKeyAlgorithm = PublicKeyAlgorithmTag.RsaGeneral;
+            FileType = ChoPGPFileType.Binary;
         }
 
         #endregion Constructor
@@ -98,7 +105,7 @@ namespace Cinchoo.PGP
                 using (MemoryStream @out = new MemoryStream())
                 {
                     PgpCompressedDataGenerator comData = new PgpCompressedDataGenerator(CompressionAlgorithm);
-                    PgpUtilities.WriteFileToLiteralData(comData.Open(@out), PgpLiteralData.Binary, new FileInfo(inputFilePath));
+                    PgpUtilities.WriteFileToLiteralData(comData.Open(@out), FileTypeToChar(), new FileInfo(inputFilePath));
                     comData.Close();
 
                     PgpEncryptedDataGenerator pk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithm, withIntegrityCheck, new SecureRandom());
@@ -238,7 +245,7 @@ namespace Cinchoo.PGP
         private Stream ChainLiteralOut(Stream compressedOut, FileInfo file)
         {
             PgpLiteralDataGenerator pgpLiteralDataGenerator = new PgpLiteralDataGenerator();
-            return pgpLiteralDataGenerator.Open(compressedOut, PgpLiteralData.Binary, file);
+            return pgpLiteralDataGenerator.Open(compressedOut, FileTypeToChar(), file);
         }
 
         private PgpSignatureGenerator InitSignatureGenerator(Stream compressedOut, ChoPGPEncryptionKeys encryptionKeys)
@@ -432,6 +439,17 @@ namespace Cinchoo.PGP
         #endregion GenerateKey
 
         #region Private helpers
+
+        private char FileTypeToChar()
+        {
+            if (FileType == ChoPGPFileType.UTF8)
+                return PgpLiteralData.Utf8;
+            else if (FileType == ChoPGPFileType.Text)
+                return PgpLiteralData.Text;
+            else
+                return PgpLiteralData.Binary;
+
+        }
 
         private void ExportKeyPair(
                     Stream secretOut,
