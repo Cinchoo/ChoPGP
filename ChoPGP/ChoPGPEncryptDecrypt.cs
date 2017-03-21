@@ -60,7 +60,7 @@ namespace Cinchoo.PGP
 
         public ChoPGPEncryptDecrypt()
         {
-            CompressionAlgorithm = CompressionAlgorithmTag.Zip;
+            CompressionAlgorithm = CompressionAlgorithmTag.Uncompressed;
             SymmetricKeyAlgorithm = SymmetricKeyAlgorithmTag.TripleDes;
             PgpSignatureType = PgpSignature.DefaultCertification;
             PublicKeyAlgorithm = PublicKeyAlgorithmTag.RsaGeneral;
@@ -104,9 +104,14 @@ namespace Cinchoo.PGP
             {
                 using (MemoryStream @out = new MemoryStream())
                 {
-                    PgpCompressedDataGenerator comData = new PgpCompressedDataGenerator(CompressionAlgorithm);
-                    PgpUtilities.WriteFileToLiteralData(comData.Open(@out), FileTypeToChar(), new FileInfo(inputFilePath));
-                    comData.Close();
+                    if (CompressionAlgorithm != CompressionAlgorithmTag.Uncompressed)
+                    {
+                        PgpCompressedDataGenerator comData = new PgpCompressedDataGenerator(CompressionAlgorithm);
+                        PgpUtilities.WriteFileToLiteralData(comData.Open(@out), FileTypeToChar(), new FileInfo(inputFilePath));
+                        comData.Close();
+                    }
+                    else
+                        PgpUtilities.WriteFileToLiteralData(@out, FileTypeToChar(), new FileInfo(inputFilePath));
 
                     PgpEncryptedDataGenerator pk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithm, withIntegrityCheck, new SecureRandom());
                     pk.AddMethod(ReadPublicKey(pkStream));
@@ -238,8 +243,13 @@ namespace Cinchoo.PGP
 
         private Stream ChainCompressedOut(Stream encryptedOut)
         {
-            PgpCompressedDataGenerator compressedDataGenerator = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
-            return compressedDataGenerator.Open(encryptedOut);
+            if (CompressionAlgorithm != CompressionAlgorithmTag.Uncompressed)
+            {
+                PgpCompressedDataGenerator compressedDataGenerator = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
+                return compressedDataGenerator.Open(encryptedOut);
+            }
+            else
+                return encryptedOut;
         }
 
         private Stream ChainLiteralOut(Stream compressedOut, FileInfo file)
