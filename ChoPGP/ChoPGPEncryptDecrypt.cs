@@ -21,19 +21,68 @@ using System.Threading.Tasks;
 namespace Cinchoo.PGP
 {
     public enum ChoPGPFileType { Binary, Text, UTF8 }
+    public enum ChoCompressionAlgorithm
+    {
+        Uncompressed = 0,
+        Zip = 1,
+        ZLib = 2,
+        BZip2 = 3
+    }
+    public enum ChoSymmetricKeyAlgorithm
+    {
+        Null = 0,
+        Idea = 1,
+        TripleDes = 2,
+        Cast5 = 3,
+        Blowfish = 4,
+        Safer = 5,
+        Des = 6,
+        Aes128 = 7,
+        Aes192 = 8,
+        Aes256 = 9,
+        Twofish = 10,
+        Camellia128 = 11,
+        Camellia192 = 12,
+        Camellia256 = 13
+    }
+    public enum ChoPublicKeyAlgorithm
+    {
+        RsaGeneral = 1,
+        RsaEncrypt = 2,
+        RsaSign = 3,
+        ElGamalEncrypt = 16,
+        Dsa = 17,
+        EC = 18,
+        ECDH = 18,
+        ECDsa = 19,
+        ElGamalGeneral = 20,
+        DiffieHellman = 21,
+        Experimental_1 = 100,
+        Experimental_2 = 101,
+        Experimental_3 = 102,
+        Experimental_4 = 103,
+        Experimental_5 = 104,
+        Experimental_6 = 105,
+        Experimental_7 = 106,
+        Experimental_8 = 107,
+        Experimental_9 = 108,
+        Experimental_10 = 109,
+        Experimental_11 = 110
+    }
+
     public class ChoPGPEncryptDecrypt : IDisposable
     {
         public static readonly ChoPGPEncryptDecrypt Instance = new ChoPGPEncryptDecrypt();
 
         private const int BufferSize = 0x10000;
 
-        public CompressionAlgorithmTag CompressionAlgorithm
+        public ChoCompressionAlgorithm CompressionAlgorithm
         {
             get;
             set;
         }
 
-        public SymmetricKeyAlgorithmTag SymmetricKeyAlgorithm
+        public ChoSymmetricKeyAlgorithm SymmetricKeyAlgorithm
         {
             get;
             set;
@@ -45,7 +94,7 @@ namespace Cinchoo.PGP
             set;
         }
 
-        public PublicKeyAlgorithmTag PublicKeyAlgorithm
+        public ChoPublicKeyAlgorithm PublicKeyAlgorithm
         {
             get;
             set;
@@ -60,10 +109,10 @@ namespace Cinchoo.PGP
 
         public ChoPGPEncryptDecrypt()
         {
-            CompressionAlgorithm = CompressionAlgorithmTag.Uncompressed;
-            SymmetricKeyAlgorithm = SymmetricKeyAlgorithmTag.TripleDes;
+            CompressionAlgorithm = ChoCompressionAlgorithm.Uncompressed;
+            SymmetricKeyAlgorithm = ChoSymmetricKeyAlgorithm.TripleDes;
             PgpSignatureType = PgpSignature.DefaultCertification;
-            PublicKeyAlgorithm = PublicKeyAlgorithmTag.RsaGeneral;
+            PublicKeyAlgorithm = ChoPublicKeyAlgorithm.RsaGeneral;
             FileType = ChoPGPFileType.Binary;
         }
 
@@ -104,16 +153,16 @@ namespace Cinchoo.PGP
             {
                 using (MemoryStream @out = new MemoryStream())
                 {
-                    if (CompressionAlgorithm != CompressionAlgorithmTag.Uncompressed)
+                    if (CompressionAlgorithm != ChoCompressionAlgorithm.Uncompressed)
                     {
-                        PgpCompressedDataGenerator comData = new PgpCompressedDataGenerator(CompressionAlgorithm);
+                        PgpCompressedDataGenerator comData = new PgpCompressedDataGenerator((CompressionAlgorithmTag)(int)CompressionAlgorithm);
                         PgpUtilities.WriteFileToLiteralData(comData.Open(@out), FileTypeToChar(), new FileInfo(inputFilePath));
                         comData.Close();
                     }
                     else
                         PgpUtilities.WriteFileToLiteralData(@out, FileTypeToChar(), new FileInfo(inputFilePath));
 
-                    PgpEncryptedDataGenerator pk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithm, withIntegrityCheck, new SecureRandom());
+                    PgpEncryptedDataGenerator pk = new PgpEncryptedDataGenerator((SymmetricKeyAlgorithmTag)(int)SymmetricKeyAlgorithm, withIntegrityCheck, new SecureRandom());
                     pk.AddMethod(ReadPublicKey(pkStream));
 
                     byte[] bytes = @out.ToArray();
@@ -236,16 +285,16 @@ namespace Cinchoo.PGP
         private Stream ChainEncryptedOut(Stream outputStream, ChoPGPEncryptionKeys encryptionKeys, bool withIntegrityCheck)
         {
             PgpEncryptedDataGenerator encryptedDataGenerator;
-            encryptedDataGenerator = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithm, withIntegrityCheck, new SecureRandom());
+            encryptedDataGenerator = new PgpEncryptedDataGenerator((SymmetricKeyAlgorithmTag)(int)SymmetricKeyAlgorithm, withIntegrityCheck, new SecureRandom());
             encryptedDataGenerator.AddMethod(encryptionKeys.PublicKey);
             return encryptedDataGenerator.Open(outputStream, new byte[BufferSize]);
         }
 
         private Stream ChainCompressedOut(Stream encryptedOut)
         {
-            if (CompressionAlgorithm != CompressionAlgorithmTag.Uncompressed)
+            if (CompressionAlgorithm != ChoCompressionAlgorithm.Uncompressed)
             {
-                PgpCompressedDataGenerator compressedDataGenerator = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
+                PgpCompressedDataGenerator compressedDataGenerator = new PgpCompressedDataGenerator((CompressionAlgorithmTag)(int)CompressionAlgorithm);
                 return compressedDataGenerator.Open(encryptedOut);
             }
             else
@@ -371,6 +420,8 @@ namespace Cinchoo.PGP
             }
 
             PgpObject message = plainFact.NextPgpObject();
+            if (message is PgpOnePassSignatureList)
+                message = plainFact.NextPgpObject();
 
             if (message is PgpCompressedData)
             {
@@ -411,6 +462,74 @@ namespace Cinchoo.PGP
                 throw new PgpException("Encrypted message contains a signed message - not literal data.");
             else
                 throw new PgpException("Message is not a simple encrypted file.");
+        }
+
+        public async Task DecryptFileAndVerifyAsync(string inputFilePath, string outputFilePath, string publicKeyFilePath, string privateKeyFilePath, string passPhrase)
+        {
+            await Task.Run(() => DecryptFileAndVerify(inputFilePath, outputFilePath, publicKeyFilePath, privateKeyFilePath, passPhrase));
+        }
+
+        public void DecryptFileAndVerify(string inputFilePath, string outputFilePath, string publicKeyFilePath, string privateKeyFilePath, string passPhrase)
+        {
+            if (String.IsNullOrEmpty(inputFilePath))
+                throw new ArgumentException("InputFilePath");
+            if (String.IsNullOrEmpty(outputFilePath))
+                throw new ArgumentException("OutputFilePath");
+            if (String.IsNullOrEmpty(publicKeyFilePath))
+                throw new ArgumentException("PublicKeyFilePath");
+            if (String.IsNullOrEmpty(privateKeyFilePath))
+                throw new ArgumentException("PrivateKeyFilePath");
+            if (passPhrase == null)
+                passPhrase = String.Empty;
+
+            if (!File.Exists(inputFilePath))
+                throw new FileNotFoundException(String.Format("Encrypted File [{0}] not found.", inputFilePath));
+            if (!File.Exists(publicKeyFilePath))
+                throw new FileNotFoundException(String.Format("Public Key File [{0}] not found.", publicKeyFilePath));
+            if (!File.Exists(privateKeyFilePath))
+                throw new FileNotFoundException(String.Format("Private Key File [{0}] not found.", privateKeyFilePath));
+
+            ChoPGPEncryptionKeys encryptionKeys = new ChoPGPEncryptionKeys(publicKeyFilePath, privateKeyFilePath, passPhrase);
+
+            if (encryptionKeys == null)
+                throw new ArgumentNullException("Encryption Key not found.");
+
+            using (Stream inputStream = File.OpenRead(inputFilePath))
+            {
+                PgpPublicKeyEncryptedData publicKeyED = ExtractPublicKeyEncryptedData(inputStream);
+                if (publicKeyED.KeyId != encryptionKeys.PublicKey.KeyId)
+                    throw new PgpException(String.Format("Failed to verify file."));
+
+                PgpObject message = GetClearCompressedMessage(publicKeyED, encryptionKeys);
+
+                if (message is PgpCompressedData)
+                {
+                    message = ProcessCompressedMessage(message);
+                    PgpLiteralData literalData = (PgpLiteralData)message;
+                    using (Stream outputFile = File.Create(outputFilePath))
+                    {
+                        using (Stream literalDataStream = literalData.GetInputStream())
+                        {
+                            Streams.PipeAll(literalDataStream, outputFile);
+                        }
+                    }
+                }
+                else if (message is PgpLiteralData)
+                {
+                    PgpLiteralData literalData = (PgpLiteralData)message;
+                    using (Stream outputFile = File.Create(outputFilePath))
+                    {
+                        using (Stream literalDataStream = literalData.GetInputStream())
+                        {
+                            Streams.PipeAll(literalDataStream, outputFile);
+                        }
+                    }
+                }
+                else
+                    throw new PgpException("Message is not a simple encrypted file.");
+            }
+
+            return;
         }
 
         #endregion Decrypt
@@ -482,12 +601,12 @@ namespace Cinchoo.PGP
 
             PgpSecretKey secretKey = new PgpSecretKey(
                 PgpSignatureType,
-                PublicKeyAlgorithm,
+                (PublicKeyAlgorithmTag)(int)PublicKeyAlgorithm,
                 publicKey,
                 privateKey,
                 DateTime.Now,
                 identity,
-                SymmetricKeyAlgorithm,
+                (SymmetricKeyAlgorithmTag)(int)SymmetricKeyAlgorithm,
                 passPhrase,
                 null,
                 null,
@@ -548,6 +667,74 @@ namespace Cinchoo.PGP
             return pgpSecKey.ExtractPrivateKey(pass);
         }
 
+        private static PgpPublicKeyEncryptedData ExtractPublicKeyEncryptedData(Stream inputStream)
+        {
+            Stream encodedFile = PgpUtilities.GetDecoderStream(inputStream);
+            PgpEncryptedDataList encryptedDataList = GetEncryptedDataList(encodedFile);
+            PgpPublicKeyEncryptedData publicKeyED = ExtractPublicKey(encryptedDataList);
+            return publicKeyED;
+        }
+        private static PgpObject ProcessCompressedMessage(PgpObject message)
+        {
+            PgpCompressedData compressedData = (PgpCompressedData)message;
+            Stream compressedDataStream = compressedData.GetDataStream();
+            PgpObjectFactory compressedFactory = new PgpObjectFactory(compressedDataStream);
+            message = CheckforOnePassSignatureList(message, compressedFactory);
+            return message;
+        }
+        private static PgpObject CheckforOnePassSignatureList(PgpObject message, PgpObjectFactory compressedFactory)
+        {
+            message = compressedFactory.NextPgpObject();
+            if (message is PgpOnePassSignatureList)
+            {
+                message = compressedFactory.NextPgpObject();
+            }
+            return message;
+        }
+        private PgpObject GetClearCompressedMessage(PgpPublicKeyEncryptedData publicKeyED, ChoPGPEncryptionKeys encryptionKeys)
+        {
+            PgpObjectFactory clearFactory = GetClearDataStream(encryptionKeys.PrivateKey, publicKeyED);
+            PgpObject message = clearFactory.NextPgpObject();
+            if (message is PgpOnePassSignatureList)
+                message = clearFactory.NextPgpObject();
+            return message;
+        }
+        private static PgpObjectFactory GetClearDataStream(PgpPrivateKey privateKey, PgpPublicKeyEncryptedData publicKeyED)
+        {
+            Stream clearStream = publicKeyED.GetDataStream(privateKey);
+            PgpObjectFactory clearFactory = new PgpObjectFactory(clearStream);
+            return clearFactory;
+        }
+        private static PgpPublicKeyEncryptedData ExtractPublicKey(PgpEncryptedDataList encryptedDataList)
+        {
+            PgpPublicKeyEncryptedData publicKeyED = null;
+            foreach (PgpPublicKeyEncryptedData privateKeyED in encryptedDataList.GetEncryptedDataObjects())
+            {
+                if (privateKeyED != null)
+                {
+                    publicKeyED = privateKeyED;
+                    break;
+                }
+            }
+            return publicKeyED;
+        }
+        private static PgpEncryptedDataList GetEncryptedDataList(Stream encodedFile)
+        {
+            PgpObjectFactory factory = new PgpObjectFactory(encodedFile);
+            PgpObject pgpObject = factory.NextPgpObject();
+
+            PgpEncryptedDataList encryptedDataList;
+
+            if (pgpObject is PgpEncryptedDataList)
+            {
+                encryptedDataList = (PgpEncryptedDataList)pgpObject;
+            }
+            else
+            {
+                encryptedDataList = (PgpEncryptedDataList)factory.NextPgpObject();
+            }
+            return encryptedDataList;
+        }
         public void Dispose()
         {
         }
