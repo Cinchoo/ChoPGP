@@ -25,13 +25,28 @@ To PGP encrypt a file
         pgp.EncryptFile("SampleData.txt", "SampleData.PGP", "Pub.asc", true, false);
     }
 ```
+To PGP encrypt and Sign a file
 
+``` csharp
+    using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
+    {
+        pgp.EncryptFileNSign("SampleData.txt", "SampleData.PGP", "Pub.asc", "Pri.asc", "Test123", true, false);
+    }
+```
 To PGP decrypt a file
 
 ``` csharp
     using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
     {
         pgp.DecryptFile("SampleData.PGP", "SampleData.OUT", "Pri.asc", "Test123");
+    }
+```
+To PGP decrypt and Verify a file
+
+``` csharp
+    using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
+    {
+        pgp.DecryptFileNVerify("SampleData.PGP", "SampleData.OUT", "Pub.asc", "Pri.asc", "Test123");
     }
 ```
 Generate Public/Private Keyring
