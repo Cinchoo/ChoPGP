@@ -17,7 +17,7 @@ Add namespace to the program
 ```
 # How to use
 
-## To PGP encrypt a file
+## 1. To PGP encrypt a file
 
 ``` csharp
 public void EncryptFile(string inputFilePath, string outputFilePath, 
@@ -41,7 +41,7 @@ where:
     }
 ```
 
-## To PGP encrypt and Sign a file
+## 2. To PGP encrypt and Sign a file
 
 ``` csharp
 public void EncryptFileAndSign(string inputFilePath, string outputFilePath, 
@@ -65,7 +65,7 @@ where:
         pgp.EncryptFileNSign("SampleData.txt", "SampleData.PGP", "Pub.asc", "Pri.asc", "Test123", true, false);
     }
 ```
-## To PGP decrypt a file
+## 3. To PGP decrypt a file
 
 ``` csharp
 public void DecryptFile(string inputFilePath, string outputFilePath, 
@@ -86,7 +86,7 @@ where:
         pgp.DecryptFile("SampleData.PGP", "SampleData.OUT", "Pri.asc", "Test123");
     }
 ```
-## To PGP decrypt and Verify a file
+## 4. To PGP decrypt and Verify a file
 
 ``` csharp
 public void DecryptFile(string inputFilePath, string outputFilePath, string publicKeyFilePath,
@@ -108,7 +108,7 @@ where:
         pgp.DecryptFileNVerify("SampleData.PGP", "SampleData.OUT", "Pub.asc", "Pri.asc", "Test123");
     }
 ```
-## Generate Public/Private Keyring
+## 5. Generate Public/Private Keyring
 
 ``` csharp
     public void GenerateKey(Stream publicKeyStream, Stream privateKeyStream, 
