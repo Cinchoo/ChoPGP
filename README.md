@@ -8,7 +8,13 @@ Simple, intutive PGP wrapper library for .NET. Extremely clean, flexible, and ea
 
 To install Cinchoo PGP, run the following command in the Package Manager Console
 
+### .NET Framework
+
     PM> Install-Package ChoPGP
+
+### .NET Core
+
+    PM> Install-Package ChoPGP.Core
 
 Add namespace to the program
 
