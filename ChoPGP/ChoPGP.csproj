@@ -48,6 +48,7 @@
   <ItemGroup>
     <Compile Include="ChoPGPEncryptDecrypt.cs" />
     <Compile Include="ChoPGPEncryptionKeys.cs" />
+    <Compile Include="ChoPGPUtility.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -32,9 +32,9 @@ namespace Cinchoo.PGP
         public ChoPGPEncryptionKeys(string publicKeyFilePath, string privateKeyFilePath, string passPhrase)
         {
             if (String.IsNullOrEmpty(publicKeyFilePath))
-                throw new ArgumentException("PublicKeyFilePath");
+                throw new ArgumentException(nameof(publicKeyFilePath));
             if (String.IsNullOrEmpty(privateKeyFilePath))
-                throw new ArgumentException("PrivateKeyFilePath");
+                throw new ArgumentException(nameof(privateKeyFilePath));
             if (passPhrase == null)
                 throw new ArgumentNullException("Invalid Pass Phrase.");
 
@@ -48,21 +48,41 @@ namespace Cinchoo.PGP
             PrivateKey = ReadPrivateKey(passPhrase);
         }
 
-        #endregion Constructors
+		public ChoPGPEncryptionKeys(Stream publicKeyFileStream, Stream privateKeyFileStream, string passPhrase)
+		{
+			if (publicKeyFileStream == null)
+				throw new ArgumentException(nameof(publicKeyFileStream));
+			if (privateKeyFileStream == null)
+				throw new ArgumentException(nameof(privateKeyFileStream));
+			if (passPhrase == null)
+				throw new ArgumentNullException("Invalid Pass Phrase.");
 
-        #region Secret Key
+			PublicKey = ReadPublicKey(publicKeyFileStream);
+			SecretKey = ReadSecretKey(privateKeyFileStream);
+			PrivateKey = ReadPrivateKey(passPhrase);
+		}
 
-        private PgpSecretKey ReadSecretKey(string privateKeyPath)
+		#endregion Constructors
+
+		#region Secret Key
+
+		private PgpSecretKey ReadSecretKey(Stream privateKeyStream)
+		{
+			using (Stream inputStream = PgpUtilities.GetDecoderStream(privateKeyStream))
+			{
+				PgpSecretKeyRingBundle secretKeyRingBundle = new PgpSecretKeyRingBundle(inputStream);
+				PgpSecretKey foundKey = GetFirstSecretKey(secretKeyRingBundle);
+				if (foundKey != null)
+					return foundKey;
+			}
+			throw new ArgumentException("Can't find signing key in key ring.");
+		}
+
+		private PgpSecretKey ReadSecretKey(string privateKeyPath)
         {
             using (Stream sr = File.OpenRead(privateKeyPath))
             {
-                using (Stream inputStream = PgpUtilities.GetDecoderStream(sr))
-                {
-                    PgpSecretKeyRingBundle secretKeyRingBundle = new PgpSecretKeyRingBundle(inputStream);
-                    PgpSecretKey foundKey = GetFirstSecretKey(secretKeyRingBundle);
-                    if (foundKey != null)
-                        return foundKey;
-                }
+				return ReadSecretKey(sr);
             }
             throw new ArgumentException("Can't find signing key in key ring.");
         }
@@ -85,21 +105,27 @@ namespace Cinchoo.PGP
             return null;
         }
 
-        #endregion Secret Key
+		#endregion Secret Key
 
-        #region Public Key
+		#region Public Key
 
-        private PgpPublicKey ReadPublicKey(string publicKeyPath)
+		private PgpPublicKey ReadPublicKey(Stream publicKeyStream)
+		{
+			using (Stream inputStream = PgpUtilities.GetDecoderStream(publicKeyStream))
+			{
+				PgpPublicKeyRingBundle publicKeyRingBundle = new PgpPublicKeyRingBundle(inputStream);
+				PgpPublicKey foundKey = GetFirstPublicKey(publicKeyRingBundle);
+				if (foundKey != null)
+					return foundKey;
+			}
+			throw new ArgumentException("No encryption key found in public key ring.");
+		}
+
+		private PgpPublicKey ReadPublicKey(string publicKeyPath)
         {
             using (Stream keyIn = File.OpenRead(publicKeyPath))
             {
-                using (Stream inputStream = PgpUtilities.GetDecoderStream(keyIn))
-                {
-                    PgpPublicKeyRingBundle publicKeyRingBundle = new PgpPublicKeyRingBundle(inputStream);
-                    PgpPublicKey foundKey = GetFirstPublicKey(publicKeyRingBundle);
-                    if (foundKey != null)
-                        return foundKey;
-                }
+				return ReadPublicKey(keyIn);
             }
             throw new ArgumentException("No encryption key found in public key ring.");
         }
