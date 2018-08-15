@@ -205,11 +205,11 @@ namespace Cinchoo.PGP
 				if (CompressionAlgorithm != ChoCompressionAlgorithm.Uncompressed)
 				{
 					PgpCompressedDataGenerator comData = new PgpCompressedDataGenerator((CompressionAlgorithmTag)(int)CompressionAlgorithm);
-					ChoPGPUtility.WriteStreamToLiteralData(comData.Open(@out), FileTypeToChar(), inputStream, "name");
+					ChoPGPUtility.WriteStreamToLiteralData(comData.Open(@out), FileTypeToChar(), inputStream, Path.GetFileName(inputStream));
 					comData.Close();
 				}
 				else
-					ChoPGPUtility.WriteStreamToLiteralData(@out, FileTypeToChar(), inputStream, "name");
+					ChoPGPUtility.WriteStreamToLiteralData(@out, FileTypeToChar(), inputStream, Path.GetFileName(inputStream));
 
 				PgpEncryptedDataGenerator pk = new PgpEncryptedDataGenerator((SymmetricKeyAlgorithmTag)(int)SymmetricKeyAlgorithm, withIntegrityCheck, new SecureRandom());
 				pk.AddMethod(ReadPublicKey(pkStream));
@@ -359,11 +359,11 @@ namespace Cinchoo.PGP
 			{
 				using (ArmoredOutputStream armoredOutputStream = new ArmoredOutputStream(outputStream))
 				{
-					OutputEncrypted(inputStream, armoredOutputStream, encryptionKeys, withIntegrityCheck, "name");
+					OutputEncrypted(inputStream, armoredOutputStream, encryptionKeys, withIntegrityCheck, Path.GetFileName(inputStream));
 				}
 			}
 			else
-				OutputEncrypted(inputStream, outputStream, encryptionKeys, withIntegrityCheck, "name");
+				OutputEncrypted(inputStream, outputStream, encryptionKeys, withIntegrityCheck, Path.GetFileName(inputStream));
 		}
 
 		private void OutputEncrypted(Stream inputStream, Stream outputStream, ChoPGPEncryptionKeys encryptionKeys, bool withIntegrityCheck, string name)
