@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.27428.2015
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChoPGP", "ChoPGP\ChoPGP.csproj", "{B3911FE9-0A4B-4D07-BB93-5960D1BDBCC2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChoPGP.Test", "ChoPGP.Test\ChoPGP.Test.csproj", "{FF4ACC4D-6447-4229-9D24-475C2B8E6235}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChoPGP.Core", "ChoPGP.Core\ChoPGP.Core.csproj", "{9A190C26-D375-411F-86B1-F3C34A5A17BF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,8 +23,15 @@ Global
 		{FF4ACC4D-6447-4229-9D24-475C2B8E6235}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FF4ACC4D-6447-4229-9D24-475C2B8E6235}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FF4ACC4D-6447-4229-9D24-475C2B8E6235}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A190C26-D375-411F-86B1-F3C34A5A17BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A190C26-D375-411F-86B1-F3C34A5A17BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A190C26-D375-411F-86B1-F3C34A5A17BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A190C26-D375-411F-86B1-F3C34A5A17BF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {00BCDC92-B39C-414F-8F73-0E4D548FAC52}
 	EndGlobalSection
 EndGlobal

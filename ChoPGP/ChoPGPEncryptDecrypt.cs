@@ -433,10 +433,14 @@ namespace Cinchoo.PGP
         private Stream ChainLiteralOut(Stream compressedOut, FileInfo file)
         {
             PgpLiteralDataGenerator pgpLiteralDataGenerator = new PgpLiteralDataGenerator();
-            return pgpLiteralDataGenerator.Open(compressedOut, FileTypeToChar(), file);
-        }
+#if NETCOREAPP2_0
+			return pgpLiteralDataGenerator.Open(compressedOut, FileTypeToChar(), file.Name, file.Length, DateTime.Now);
+#else
+			return pgpLiteralDataGenerator.Open(compressedOut, FileTypeToChar(), file);
+#endif
+		}
 
-        private PgpSignatureGenerator InitSignatureGenerator(Stream compressedOut, ChoPGPEncryptionKeys encryptionKeys)
+		private PgpSignatureGenerator InitSignatureGenerator(Stream compressedOut, ChoPGPEncryptionKeys encryptionKeys)
         {
             PublicKeyAlgorithmTag tag = encryptionKeys.SecretKey.PublicKey.Algorithm;
             PgpSignatureGenerator pgpSignatureGenerator = new PgpSignatureGenerator(tag, HashAlgorithmTag.Sha1);
@@ -453,9 +457,9 @@ namespace Cinchoo.PGP
             return pgpSignatureGenerator;
         }
 
-        #endregion Encrypt and Sign
+#endregion Encrypt and Sign
 
-        #region DecryptFile
+#region DecryptFile
 
         public async Task DecryptFileAsync(string inputFilePath, string outputFilePath, string privateKeyFilePath, string passPhrase)
         {
@@ -495,9 +499,9 @@ namespace Cinchoo.PGP
             }
         }
 
-		#endregion DecryptFile
+#endregion DecryptFile
 
-		#region Decrypt
+#region Decrypt
 
 		public async Task DecryptAsync(Stream inputStream, Stream outputStream, string privateKeyFilePath, string passPhrase)
 		{
@@ -612,9 +616,9 @@ namespace Cinchoo.PGP
                 throw new PgpException("Message is not a simple encrypted file.");
         }
 
-		#endregion Decrypt
+#endregion Decrypt
 
-		#region DecryptFileAndVerify
+#region DecryptFileAndVerify
 
 		public async Task DecryptFileAndVerifyAsync(string inputFilePath, string outputFilePath, string publicKeyFilePath, string privateKeyFilePath, string passPhrase)
         {
@@ -684,9 +688,9 @@ namespace Cinchoo.PGP
             return;
         }
 
-		#endregion DecryptFileAndVerify
+#endregion DecryptFileAndVerify
 
-		#region DecryptAndVerify
+#region DecryptAndVerify
 
 		public async Task DecryptAndVerifyAsync(Stream inputStream, Stream outputStream, string publicKeyFilePath, string privateKeyFilePath, string passPhrase)
 		{
@@ -750,9 +754,9 @@ namespace Cinchoo.PGP
 			return;
 		}
 
-		#endregion DecryptAndVerify
+#endregion DecryptAndVerify
 
-		#region GenerateKey
+#region GenerateKey
 
 		public async Task GenerateKeyAsync(string publicKeyFilePath, string privateKeyFilePath, string username = null, string password = null, int strength = 1024, int certainty = 8)
         {
@@ -783,9 +787,9 @@ namespace Cinchoo.PGP
             ExportKeyPair(privateKeyStream, publicKeyStream, kp.Public, kp.Private, username, password.ToCharArray(), armor);
         }
 
-        #endregion GenerateKey
+#endregion GenerateKey
 
-        #region Private helpers
+#region Private helpers
 
         private char FileTypeToChar()
         {
@@ -957,7 +961,7 @@ namespace Cinchoo.PGP
         {
         }
 
-        #endregion Private helpers
+#endregion Private helpers
     }
 
 }

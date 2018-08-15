@@ -12,20 +12,20 @@ namespace ChoPGP.Test
     {
         static void Main(string[] args)
         {
-			//GenerateKeyPair();
-			//EncryptFile();
-			//DecryptFile();
-			//Console.ReadLine();
-			EncryptFile();
-			DecryptFile();
+            //GenerateKeyPair();
+            //EncryptFile();
+            //DecryptFile();
+            //Console.ReadLine();
+            //EncryptFile();
+            //DecryptFile();
 
-			//EncryptFileNSign();
-			//DecryptFileNVerify();
-			//EncryptNSign();
-			//DecryptNVerify();
-		}
+            //EncryptFileNSign();
+            //DecryptFileNVerify();
+            EncryptNSign();
+            DecryptNVerify();
+        }
 
-		private static void GenerateKeyPair()
+        private static void GenerateKeyPair()
         {
             using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
                 pgp.GenerateKey("pub.asc", "pri.asc", "mark@gmail.com", "Test123");
@@ -50,36 +50,36 @@ namespace ChoPGP.Test
             }
         }
 
-		private static void Encrypt()
-		{
-			using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
-			{
-				using (Stream input = File.OpenRead("SampleData.txt"))
-				{
-					using (Stream output = File.OpenWrite("SampleData.PGP"))
-					{
-						//pgp.CompressionAlgorithm = ChoCompressionAlgorithm.Zip;
-						pgp.Encrypt(input, output, "Sample_Pub.asc", true, false);
-					}
-				}
-			}
-		}
-		private static void Decrypt()
-		{
-			using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
-			{
-				using (Stream input = File.OpenRead("SampleData.PGP"))
-				{
-					using (Stream output = File.OpenWrite("SampleData.OUT"))
-					{
-						pgp.Decrypt(input, output, "Sample_Pri.asc", "Test123");
-					}
-				}
-				Console.WriteLine("PGP Decryption done.");
-			}
-		}
+        private static void Encrypt()
+        {
+            using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
+            {
+                using (Stream input = File.OpenRead("SampleData.txt"))
+                {
+                    using (Stream output = File.OpenWrite("SampleData.PGP"))
+                    {
+                        //pgp.CompressionAlgorithm = ChoCompressionAlgorithm.Zip;
+                        pgp.Encrypt(input, output, "Sample_Pub.asc", true, false);
+                    }
+                }
+            }
+        }
+        private static void Decrypt()
+        {
+            using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
+            {
+                using (Stream input = File.OpenRead("SampleData.PGP"))
+                {
+                    using (Stream output = File.OpenWrite("SampleData.OUT"))
+                    {
+                        pgp.Decrypt(input, output, "Sample_Pri.asc", "Test123");
+                    }
+                }
+                Console.WriteLine("PGP Decryption done.");
+            }
+        }
 
-		private static void EncryptFileNSign()
+        private static void EncryptFileNSign()
         {
             using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
             {
@@ -97,35 +97,35 @@ namespace ChoPGP.Test
                 Console.WriteLine("PGP Decryption done.");
             }
         }
-		private static void EncryptNSign()
-		{
-			using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
-			{
-				using (Stream input = File.OpenRead("SampleData.txt"))
-				{
-					using (Stream output = File.OpenWrite("SampleData.PGP"))
-					{
-						//pgp.CompressionAlgorithm = ChoCompressionAlgorithm.Zip;
-						pgp.EncryptAndSign(input, output, "Sample_Pub.asc", "Sample_Pri.asc", "Test123", true, false);
-					}
-				}
-			}
-			Console.WriteLine("PGP Encryption done.");
-		}
+        private static void EncryptNSign()
+        {
+            using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
+            {
+                using (Stream input = File.OpenRead("SampleData.txt"))
+                {
+                    using (Stream output = File.OpenWrite("SampleData.PGP"))
+                    {
+                        //pgp.CompressionAlgorithm = ChoCompressionAlgorithm.Zip;
+                        pgp.EncryptAndSign(input, output, "Sample_Pub.asc", "Sample_Pri.asc", "Test123", true, false);
+                    }
+                }
+            }
+            Console.WriteLine("PGP Encryption done.");
+        }
 
-		private static void DecryptNVerify()
-		{
-			using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
-			{
-				using (Stream input = File.OpenRead("SampleData.PGP"))
-				{
-					using (Stream output = File.OpenWrite("SampleData.OUT"))
-					{
-						pgp.DecryptAndVerify(input, output, "Sample_Pub.asc", "Sample_Pri.asc", "Test123");
-					}
-				}
-				Console.WriteLine("PGP Decryption done.");
-			}
-		}
-	}
+        private static void DecryptNVerify()
+        {
+            using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
+            {
+                using (Stream input = File.OpenRead("SampleData.PGP"))
+                {
+                    using (Stream output = File.OpenWrite("SampleData.OUT"))
+                    {
+                        pgp.DecryptAndVerify(input, output, "Sample_Pub.asc", "Sample_Pri.asc", "Test123");
+                    }
+                }
+                Console.WriteLine("PGP Decryption done.");
+            }
+        }
+    }
 }
