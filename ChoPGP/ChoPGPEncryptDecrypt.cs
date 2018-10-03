@@ -834,7 +834,7 @@ namespace Cinchoo.PGP
                 (PublicKeyAlgorithmTag)(int)PublicKeyAlgorithm,
                 publicKey,
                 privateKey,
-                DateTime.Now,
+                DateTime.UtcNow,
                 identity,
                 (SymmetricKeyAlgorithmTag)(int)SymmetricKeyAlgorithm,
                 passPhrase,
