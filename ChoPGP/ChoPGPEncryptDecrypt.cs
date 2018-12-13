@@ -874,11 +874,23 @@ namespace Cinchoo.PGP
             // iterate through the key rings.
             foreach (PgpPublicKeyRing kRing in pgpPub.GetKeyRings())
             {
-                foreach (PgpPublicKey k in kRing.GetPublicKeys())
+                List<PgpPublicKey> keys = kRing.GetPublicKeys()
+                    .Cast<PgpPublicKey>()
+                    .Where(k => k.IsEncryptionKey).ToList();
+
+                const int encryptKeyFlags = PgpKeyFlags.CanEncryptCommunications | PgpKeyFlags.CanEncryptStorage;
+
+                foreach (PgpPublicKey key in keys.Where(k => k.Version >= 4 && !k.IsMasterKey))
                 {
-                    if (k.IsEncryptionKey)
-                        return k;
+                    foreach (PgpSignature s in key.GetSignatures())
+                    {
+                        if (s.GetHashedSubPackets().GetKeyFlags() == encryptKeyFlags)
+                            return key;
+                    }
                 }
+
+                if (keys.Any())
+                    return keys.First();
             }
 
             throw new ArgumentException("Can't find encryption key in key ring.");
