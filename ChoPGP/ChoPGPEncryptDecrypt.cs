@@ -575,36 +575,11 @@ namespace Cinchoo.PGP
                 else
                     throw new PgpException("message is not a simple encrypted file - type unknown.");
 
-                //if (pbe.IsIntegrityProtected())
-                //{
-                //    if (!pbe.Verify())
-                //        //MessageBox.Show(null, "Message failed integrity check.", "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                //    else
-                //        //MessageBox.Show(null, "Message integrity check passed.", "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                //}
-                //else
-                //{
-                //    //MessageBox.Show(null, "No message integrity check.", "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                //}
-
                 return decoded.ToArray();
             }
             catch (Exception e)
             {
                 throw e;
-                //if (e.Message.StartsWith("Checksum mismatch"))
-                //    MessageBox.Show(null, "Likely invalid passcode. Possible data corruption.", "Invalid Passcode", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                //else if (e.Message.StartsWith("Object reference not"))
-                //    MessageBox.Show(null, "PGP data does not exist.", "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                //else if (e.Message.StartsWith("Premature end of stream"))
-                //    MessageBox.Show(null, "Partial PGP data found.", "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                //else
-                //    MessageBox.Show(null, e.Message, "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                //Exception underlyingException = e.InnerException;
-                //if (underlyingException != null)
-                //    MessageBox.Show(null, underlyingException.Message, "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-
-                //return error;
             }
         }
 
@@ -670,36 +645,12 @@ namespace Cinchoo.PGP
                 else
                     throw new PgpException("message is not a simple encrypted file - type unknown.");
 
-                //if (pbe.IsIntegrityProtected())
-                //{
-                //    if (!pbe.Verify())
-                //        //MessageBox.Show(null, "Message failed integrity check.", "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                //    else
-                //        //MessageBox.Show(null, "Message integrity check passed.", "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                //}
-                //else
-                //{
-                //    //MessageBox.Show(null, "No message integrity check.", "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                //}
 
                 return decoded;
             }
             catch (Exception e)
             {
                 throw e;
-                //if (e.Message.StartsWith("Checksum mismatch"))
-                //    MessageBox.Show(null, "Likely invalid passcode. Possible data corruption.", "Invalid Passcode", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                //else if (e.Message.StartsWith("Object reference not"))
-                //    MessageBox.Show(null, "PGP data does not exist.", "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                //else if (e.Message.StartsWith("Premature end of stream"))
-                //    MessageBox.Show(null, "Partial PGP data found.", "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                //else
-                //    MessageBox.Show(null, e.Message, "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                //Exception underlyingException = e.InnerException;
-                //if (underlyingException != null)
-                //    MessageBox.Show(null, underlyingException.Message, "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-
-                //return error;
             }
         }
 
@@ -765,36 +716,11 @@ namespace Cinchoo.PGP
                 else
                     throw new PgpException("message is not a simple encrypted file - type unknown.");
 
-                //if (pbe.IsIntegrityProtected())
-                //{
-                //    if (!pbe.Verify())
-                //        //MessageBox.Show(null, "Message failed integrity check.", "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                //    else
-                //        //MessageBox.Show(null, "Message integrity check passed.", "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                //}
-                //else
-                //{
-                //    //MessageBox.Show(null, "No message integrity check.", "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                //}
-
                 return decoded;
             }
             catch (Exception e)
             {
                 throw e;
-                //if (e.Message.StartsWith("Checksum mismatch"))
-                //    MessageBox.Show(null, "Likely invalid passcode. Possible data corruption.", "Invalid Passcode", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                //else if (e.Message.StartsWith("Object reference not"))
-                //    MessageBox.Show(null, "PGP data does not exist.", "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                //else if (e.Message.StartsWith("Premature end of stream"))
-                //    MessageBox.Show(null, "Partial PGP data found.", "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                //else
-                //    MessageBox.Show(null, e.Message, "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                //Exception underlyingException = e.InnerException;
-                //if (underlyingException != null)
-                //    MessageBox.Show(null, underlyingException.Message, "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-
-                //return error;
             }
         }
 
@@ -860,36 +786,12 @@ namespace Cinchoo.PGP
                 else
                     throw new PgpException("message is not a simple encrypted file - type unknown.");
 
-                //if (pbe.IsIntegrityProtected())
-                //{
-                //    if (!pbe.Verify())
-                //        //MessageBox.Show(null, "Message failed integrity check.", "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                //    else
-                //        //MessageBox.Show(null, "Message integrity check passed.", "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                //}
-                //else
-                //{
-                //    //MessageBox.Show(null, "No message integrity check.", "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                //}
                 StreamReader reader = new StreamReader(decoded);
                 return reader.ReadToEnd();
             }
             catch (Exception e)
             {
                 throw e;
-                //if (e.Message.StartsWith("Checksum mismatch"))
-                //    MessageBox.Show(null, "Likely invalid passcode. Possible data corruption.", "Invalid Passcode", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                //else if (e.Message.StartsWith("Object reference not"))
-                //    MessageBox.Show(null, "PGP data does not exist.", "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                //else if (e.Message.StartsWith("Premature end of stream"))
-                //    MessageBox.Show(null, "Partial PGP data found.", "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                //else
-                //    MessageBox.Show(null, e.Message, "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                //Exception underlyingException = e.InnerException;
-                //if (underlyingException != null)
-                //    MessageBox.Show(null, underlyingException.Message, "PGP Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-
-                //return error;
             }
         }
 
