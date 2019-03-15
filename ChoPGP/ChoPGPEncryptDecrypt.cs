@@ -1,23 +1,17 @@
-﻿using Org.BouncyCastle.Asn1.Pkcs;
-using Org.BouncyCastle.Asn1.X509;
-using Org.BouncyCastle.Bcpg;
+﻿using Org.BouncyCastle.Bcpg;
 using Org.BouncyCastle.Bcpg.OpenPgp;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Math;
-using Org.BouncyCastle.Pkcs;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Utilities.IO;
-using Org.BouncyCastle.X509;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using System.Linq;
 
 namespace Cinchoo.PGP
 {
@@ -316,7 +310,7 @@ namespace Cinchoo.PGP
                 File.OpenRead(privateKeyFilePath), passPhrase, armor, withIntegrityCheck));
         }
 
-        public async Task EncryptAndSignAsync(Stream inputStream, Stream outputStream, Stream publicKeyStream, 
+        public async Task EncryptAndSignAsync(Stream inputStream, Stream outputStream, Stream publicKeyStream,
             Stream privateKeyStream, string passPhrase, bool armor = true, bool withIntegrityCheck = true)
         {
             await Task.Run(() => EncryptAndSignAsync(inputStream, outputStream, publicKeyStream,
@@ -458,9 +452,9 @@ namespace Cinchoo.PGP
             return pgpSignatureGenerator;
         }
 
-#endregion Encrypt and Sign
+        #endregion Encrypt and Sign
 
-#region DecryptFile
+        #region DecryptFile
 
         public async Task DecryptFileAsync(string inputFilePath, string outputFilePath, string privateKeyFilePath, string passPhrase)
         {
@@ -500,9 +494,9 @@ namespace Cinchoo.PGP
             }
         }
 
-#endregion DecryptFile
+        #endregion DecryptFile
 
-#region Decrypt
+        #region Decrypt
 
         public async Task DecryptAsync(Stream inputStream, Stream outputStream, string privateKeyFilePath, string passPhrase)
         {
@@ -920,7 +914,7 @@ namespace Cinchoo.PGP
             PgpObject obj = null;
             if (objFactory != null)
                 obj = objFactory.NextPgpObject();
-                
+
 
 
             // the first object might be a PGP marker packet.
@@ -999,7 +993,7 @@ namespace Cinchoo.PGP
                 throw new PgpException("Message is not a simple encrypted file.");
         }
 
-        
+
 
         #endregion Decrypt
 
@@ -1073,9 +1067,9 @@ namespace Cinchoo.PGP
             return;
         }
 
-#endregion DecryptFileAndVerify
+        #endregion DecryptFileAndVerify
 
-#region DecryptAndVerify
+        #region DecryptAndVerify
 
         public async Task DecryptAndVerifyAsync(Stream inputStream, Stream outputStream, string publicKeyFilePath, string privateKeyFilePath, string passPhrase)
         {
@@ -1223,9 +1217,9 @@ namespace Cinchoo.PGP
             ExportKeyPair(privateKeyStream, publicKeyStream, kp.Public, kp.Private, username, password.ToCharArray(), armor);
         }
 
-#endregion GenerateKey
+        #endregion GenerateKey
 
-#region Private helpers
+        #region Private helpers
 
         private string GetFileName(Stream stream)
         {
@@ -1442,7 +1436,7 @@ namespace Cinchoo.PGP
         {
         }
 
-#endregion Private helpers
+        #endregion Private helpers
     }
 
 }
