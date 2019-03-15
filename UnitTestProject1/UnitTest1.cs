@@ -77,7 +77,6 @@ namespace UnitTestProject1
                 {
                     using (Stream output = File.OpenWrite("SampleData.PGP"))
                     {
-                        //pgp.CompressionAlgorithm = ChoCompressionAlgorithm.Zip;
                         pgp.Encrypt(input, output, "Sample_Pub.asc", true, false);
                     }
                 }
@@ -105,7 +104,6 @@ namespace UnitTestProject1
         {
             using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
             {
-                //pgp.CompressionAlgorithm = ChoCompressionAlgorithm.Zip;
                 pgp.EncryptFileAndSign("SampleData.txt", "SampleData.PGP", "Sample_Pub.asc", "Sample_Pri.asc", "Test123", true, false);
                 Console.WriteLine("PGP Encryption done.");
             }
@@ -129,7 +127,6 @@ namespace UnitTestProject1
                 {
                     using (Stream output = File.OpenWrite("SampleData.PGP"))
                     {
-                        //pgp.CompressionAlgorithm = ChoCompressionAlgorithm.Zip;
                         pgp.EncryptAndSign(input, output, "Sample_Pub.asc", "Sample_Pri.asc", "Test123", true, false);
                     }
                 }
@@ -165,8 +162,6 @@ namespace UnitTestProject1
         {
             using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
             {
-                //    pgp.EncryptFile("SampleData.txt", "SampleData.PGP", "Pub.asc", true, false);
-                //    pgp.DecryptFile("SampleData.PGP", "SampleData.OUT", "Pri.asc", "Test123");
                 MemoryStream a = new System.IO.MemoryStream();
 
                 byte[] byteArray = Encoding.UTF8.GetBytes(text);
@@ -185,8 +180,6 @@ namespace UnitTestProject1
             {
                 using (MemoryStream a = new System.IO.MemoryStream())
                 {
-
-                    //pgp.Decrypt(text, a, "Sample_Pri.asc", "Test123");
                     byte[] r = pgp.DecryptInMemory(text.ToArray(), File.OpenRead("Sample_Pri.asc"), pass);
                     MemoryStream ms = new MemoryStream(r);
                     StreamReader reader = new StreamReader(ms);
@@ -213,7 +206,6 @@ namespace UnitTestProject1
 
                 byte[] byteArray = Encoding.UTF8.GetBytes(text);
                 MemoryStream stream = new MemoryStream(byteArray);
-                //pgp.CompressionAlgorithm = ChoCompressionAlgorithm.Zip;
                 pgp.EncryptAndSign(stream, a, "Sample_Pub.asc", "Sample_Pri.asc", "Test123", true, false);
                 return a;
                    
@@ -226,8 +218,6 @@ namespace UnitTestProject1
             {
                 using (MemoryStream a = new System.IO.MemoryStream())
                 {
-
-                    //pgp.Decrypt(text, a, "Sample_Pri.asc", "Test123");
                     Stream message;
                     message = pgp.DecryptAndVerifyInMemory(text, a, "Sample_Pub.asc", "Sample_Pri.asc", pass);
                     MemoryStream ms = new MemoryStream(); ;
