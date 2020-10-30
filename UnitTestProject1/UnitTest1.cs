@@ -180,7 +180,7 @@ namespace UnitTestProject1
             {
                 using (MemoryStream a = new System.IO.MemoryStream())
                 {
-                    byte[] r = pgp.DecryptInMemory(text.ToArray(), File.OpenRead("Sample_Pri.asc"), pass);
+                    byte[] r = pgp.Decrypt(text.ToArray(), File.OpenRead("Sample_Pri.asc"), pass);
                     MemoryStream ms = new MemoryStream(r);
                     StreamReader reader = new StreamReader(ms);
                     return reader.ReadToEnd();
