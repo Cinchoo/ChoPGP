@@ -21,8 +21,8 @@ namespace ChoPGP.Test
 
             //EncryptFileNSign();
             //DecryptFileNVerify();
-            EncryptNSign();
-            DecryptNVerify();
+            EncryptFile();
+            //DecryptNVerify();
         }
 
         private static void GenerateKeyPair()
@@ -37,7 +37,7 @@ namespace ChoPGP.Test
         {
             using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
             {
-                pgp.EncryptFile("SampleData.txt", "SampleData.PGP", "Sample_Pub.asc", true, false);
+                pgp.EncryptFile(@"C:\Temp\SampleData.txt", @"C:\Temp\SampleData.PGP", "Sample_Pub.asc", true, false);
                 Console.WriteLine("PGP Encryption done.");
             }
         }
@@ -101,9 +101,9 @@ namespace ChoPGP.Test
         {
             using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
             {
-                using (Stream input = File.OpenRead("SampleData.txt"))
+                using (Stream input = File.OpenRead(@"C:\Temp\SampleData.txt"))
                 {
-                    using (Stream output = File.OpenWrite("SampleData.PGP"))
+                    using (Stream output = File.OpenWrite(@"C:\Temp\SampleData.PGP"))
                     {
                         //pgp.CompressionAlgorithm = ChoCompressionAlgorithm.Zip;
                         pgp.EncryptAndSign(input, output, "Sample_Pub.asc", "Sample_Pri.asc", "Test123", true, false);

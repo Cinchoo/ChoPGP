@@ -1,20 +1,15 @@
-﻿using Org.BouncyCastle.Asn1.Pkcs;
-using Org.BouncyCastle.Asn1.X509;
-using Org.BouncyCastle.Bcpg;
+﻿using Org.BouncyCastle.Bcpg;
 using Org.BouncyCastle.Bcpg.OpenPgp;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Math;
-using Org.BouncyCastle.Pkcs;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Utilities.IO;
-using Org.BouncyCastle.X509;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -164,7 +159,15 @@ namespace Cinchoo.PGP
         public async Task EncryptAsync(Stream inputStream, Stream outputStream, string publicKeyFilePath,
             bool armor = true, bool withIntegrityCheck = true)
         {
-            await Task.Run(() => Encrypt(inputStream, outputStream, File.OpenRead(publicKeyFilePath), armor, withIntegrityCheck));
+            if (String.IsNullOrEmpty(publicKeyFilePath))
+                throw new ArgumentException(nameof(publicKeyFilePath));
+            if (!File.Exists(publicKeyFilePath))
+                throw new FileNotFoundException(String.Format("Public Key File [{0}] not found.", publicKeyFilePath));
+
+            await Task.Run(() => {
+                using (Stream pkStream = File.OpenRead(publicKeyFilePath))
+                    Encrypt(inputStream, outputStream, pkStream, armor, withIntegrityCheck);
+                });
         }
 
         public async Task EncryptAsync(Stream inputStream, Stream outputStream, Stream publicKeyStream,
@@ -176,7 +179,13 @@ namespace Cinchoo.PGP
         public void Encrypt(Stream inputStream, Stream outputStream, string publicKeyFilePath,
             bool armor = true, bool withIntegrityCheck = true)
         {
-            Encrypt(inputStream, outputStream, File.OpenRead(publicKeyFilePath),
+            if (String.IsNullOrEmpty(publicKeyFilePath))
+                throw new ArgumentException(nameof(publicKeyFilePath));
+            if (!File.Exists(publicKeyFilePath))
+                throw new FileNotFoundException(String.Format("Public Key File [{0}] not found.", publicKeyFilePath));
+
+            using (Stream pkStream = File.OpenRead(publicKeyFilePath))
+                Encrypt(inputStream, outputStream, pkStream,
                 armor, withIntegrityCheck);
         }
 
@@ -311,11 +320,28 @@ namespace Cinchoo.PGP
 
         public async Task EncryptAndSignAsync(Stream inputStream, Stream outputStream, string publicKeyFilePath, string privateKeyFilePath, string passPhrase, bool armor = true, bool withIntegrityCheck = true)
         {
-            await Task.Run(() => EncryptAndSignAsync(inputStream, outputStream, File.OpenRead(publicKeyFilePath),
-                File.OpenRead(privateKeyFilePath), passPhrase, armor, withIntegrityCheck));
+            if (String.IsNullOrEmpty(publicKeyFilePath))
+                throw new ArgumentException(nameof(publicKeyFilePath));
+            if (String.IsNullOrEmpty(privateKeyFilePath))
+                throw new ArgumentException(nameof(privateKeyFilePath));
+            if (!File.Exists(publicKeyFilePath))
+                throw new FileNotFoundException(String.Format("Public Key File [{0}] not found.", publicKeyFilePath));
+            if (!File.Exists(privateKeyFilePath))
+                throw new FileNotFoundException(String.Format("Private Key File [{0}] not found.", privateKeyFilePath));
+
+            await Task.Run(() => {
+                using (Stream pkStream = File.OpenRead(publicKeyFilePath))
+                {
+                    using (Stream keyStream = File.OpenRead(privateKeyFilePath))
+                    {
+                        EncryptAndSignAsync(inputStream, outputStream, pkStream,
+                            keyStream, passPhrase, armor, withIntegrityCheck);
+                    }
+                }
+                });
         }
 
-        public async Task EncryptAndSignAsync(Stream inputStream, Stream outputStream, Stream publicKeyStream, 
+        public async Task EncryptAndSignAsync(Stream inputStream, Stream outputStream, Stream publicKeyStream,
             Stream privateKeyStream, string passPhrase, bool armor = true, bool withIntegrityCheck = true)
         {
             await Task.Run(() => EncryptAndSignAsync(inputStream, outputStream, publicKeyStream,
@@ -324,7 +350,22 @@ namespace Cinchoo.PGP
 
         public void EncryptAndSign(Stream inputStream, Stream outputStream, string publicKeyFilePath, string privateKeyFilePath, string passPhrase, bool armor = true, bool withIntegrityCheck = true)
         {
-            EncryptAndSign(inputStream, outputStream, File.OpenRead(publicKeyFilePath), File.OpenRead(privateKeyFilePath), passPhrase, armor, withIntegrityCheck);
+            if (String.IsNullOrEmpty(publicKeyFilePath))
+                throw new ArgumentException(nameof(publicKeyFilePath));
+            if (String.IsNullOrEmpty(privateKeyFilePath))
+                throw new ArgumentException(nameof(privateKeyFilePath));
+            if (!File.Exists(publicKeyFilePath))
+                throw new FileNotFoundException(String.Format("Public Key File [{0}] not found.", publicKeyFilePath));
+            if (!File.Exists(privateKeyFilePath))
+                throw new FileNotFoundException(String.Format("Private Key File [{0}] not found.", privateKeyFilePath));
+
+            using (Stream pkStream = File.OpenRead(publicKeyFilePath))
+            {
+                using (Stream keyStream = File.OpenRead(privateKeyFilePath))
+                {
+                    EncryptAndSign(inputStream, outputStream, pkStream, keyStream, passPhrase, armor, withIntegrityCheck);
+                }
+            }
         }
 
         /// <summary>
@@ -457,9 +498,9 @@ namespace Cinchoo.PGP
             return pgpSignatureGenerator;
         }
 
-#endregion Encrypt and Sign
+        #endregion Encrypt and Sign
 
-#region DecryptFile
+        #region DecryptFile
 
         public async Task DecryptFileAsync(string inputFilePath, string outputFilePath, string privateKeyFilePath, string passPhrase)
         {
@@ -499,13 +540,22 @@ namespace Cinchoo.PGP
             }
         }
 
-#endregion DecryptFile
+        #endregion DecryptFile
 
-#region Decrypt
+        #region Decrypt
 
         public async Task DecryptAsync(Stream inputStream, Stream outputStream, string privateKeyFilePath, string passPhrase)
         {
-            await Task.Run(() => Decrypt(inputStream, outputStream, File.OpenRead(privateKeyFilePath), passPhrase));
+            if (String.IsNullOrEmpty(privateKeyFilePath))
+                throw new ArgumentException(nameof(privateKeyFilePath));
+            if (!File.Exists(privateKeyFilePath))
+                throw new FileNotFoundException(String.Format("Private Key File [{0}] not found.", privateKeyFilePath));
+
+            await Task.Run(() =>
+            {
+                using (Stream keyStream = File.OpenRead(privateKeyFilePath))
+                    Decrypt(inputStream, outputStream, keyStream, passPhrase);
+            });
         }
 
         public async Task DecryptAsync(Stream inputStream, Stream outputStream, Stream privateKeyStream, string passPhrase)
@@ -515,7 +565,290 @@ namespace Cinchoo.PGP
 
         public void Decrypt(Stream inputStream, Stream outputStream, string privateKeyFilePath, string passPhrase)
         {
-            Decrypt(inputStream, outputStream, File.OpenRead(privateKeyFilePath), passPhrase);
+            using (Stream keyStream = File.OpenRead(privateKeyFilePath))
+                Decrypt(inputStream, outputStream, keyStream, passPhrase);
+        }
+
+        public byte[] DecryptInMemory(byte[] inputData, Stream keyIn, string passCode)
+        {
+            byte[] error = Encoding.ASCII.GetBytes("ERROR");
+
+            Stream inputStream = new MemoryStream(inputData);
+            inputStream = PgpUtilities.GetDecoderStream(inputStream);
+            MemoryStream decoded = new MemoryStream();
+
+            try
+            {
+                PgpObjectFactory pgpF = new PgpObjectFactory(inputStream);
+                PgpEncryptedDataList enc;
+                PgpObject o = pgpF.NextPgpObject();
+
+                //
+                // the first object might be a PGP marker packet.
+                //
+                if (o is PgpEncryptedDataList)
+                    enc = (PgpEncryptedDataList)o;
+                else
+                    enc = (PgpEncryptedDataList)pgpF.NextPgpObject();
+
+                //
+                // find the secret key
+                //
+                PgpPrivateKey sKey = null;
+                PgpPublicKeyEncryptedData pbe = null;
+                PgpSecretKeyRingBundle pgpSec = new PgpSecretKeyRingBundle(
+                PgpUtilities.GetDecoderStream(keyIn));
+                foreach (PgpPublicKeyEncryptedData pked in enc.GetEncryptedDataObjects())
+                {
+                    sKey = FindSecretKey(pgpSec, pked.KeyId, passCode.ToCharArray());
+                    if (sKey != null)
+                    {
+                        pbe = pked;
+                        break;
+                    }
+                }
+                if (sKey == null)
+                    throw new ArgumentException("secret key for message not found.");
+
+                Stream clear = pbe.GetDataStream(sKey);
+                PgpObjectFactory plainFact = new PgpObjectFactory(clear);
+                PgpObject message = plainFact.NextPgpObject();
+
+                if (message is PgpCompressedData)
+                {
+                    PgpCompressedData cData = (PgpCompressedData)message;
+                    PgpObjectFactory pgpFact = new PgpObjectFactory(cData.GetDataStream());
+                    message = pgpFact.NextPgpObject();
+                }
+                if (message is PgpLiteralData)
+                {
+                    PgpLiteralData ld = (PgpLiteralData)message;
+                    Stream unc = ld.GetInputStream();
+                    Streams.PipeAll(unc, decoded);
+                }
+                else if (message is PgpOnePassSignatureList)
+                    throw new PgpException("encrypted message contains a signed message - not literal data.");
+                else
+                    throw new PgpException("message is not a simple encrypted file - type unknown.");
+
+                return decoded.ToArray();
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+        }
+
+        public MemoryStream DecryptInMemoryMS(byte[] inputData, Stream keyIn, string passCode)
+        {
+            byte[] error = Encoding.ASCII.GetBytes("ERROR");
+
+            Stream inputStream = new MemoryStream(inputData);
+            inputStream = PgpUtilities.GetDecoderStream(inputStream);
+            MemoryStream decoded = new MemoryStream();
+
+            try
+            {
+                PgpObjectFactory pgpF = new PgpObjectFactory(inputStream);
+                PgpEncryptedDataList enc;
+                PgpObject o = pgpF.NextPgpObject();
+
+                //
+                // the first object might be a PGP marker packet.
+                //
+                if (o is PgpEncryptedDataList)
+                    enc = (PgpEncryptedDataList)o;
+                else
+                    enc = (PgpEncryptedDataList)pgpF.NextPgpObject();
+
+                //
+                // find the secret key
+                //
+                PgpPrivateKey sKey = null;
+                PgpPublicKeyEncryptedData pbe = null;
+                PgpSecretKeyRingBundle pgpSec = new PgpSecretKeyRingBundle(
+                PgpUtilities.GetDecoderStream(keyIn));
+                foreach (PgpPublicKeyEncryptedData pked in enc.GetEncryptedDataObjects())
+                {
+                    sKey = FindSecretKey(pgpSec, pked.KeyId, passCode.ToCharArray());
+                    if (sKey != null)
+                    {
+                        pbe = pked;
+                        break;
+                    }
+                }
+                if (sKey == null)
+                    throw new ArgumentException("secret key for message not found.");
+
+                Stream clear = pbe.GetDataStream(sKey);
+                PgpObjectFactory plainFact = new PgpObjectFactory(clear);
+                PgpObject message = plainFact.NextPgpObject();
+
+                if (message is PgpCompressedData)
+                {
+                    PgpCompressedData cData = (PgpCompressedData)message;
+                    PgpObjectFactory pgpFact = new PgpObjectFactory(cData.GetDataStream());
+                    message = pgpFact.NextPgpObject();
+                }
+                if (message is PgpLiteralData)
+                {
+                    PgpLiteralData ld = (PgpLiteralData)message;
+                    Stream unc = ld.GetInputStream();
+                    Streams.PipeAll(unc, decoded);
+                }
+                else if (message is PgpOnePassSignatureList)
+                    throw new PgpException("encrypted message contains a signed message - not literal data.");
+                else
+                    throw new PgpException("message is not a simple encrypted file - type unknown.");
+
+
+                return decoded;
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+        }
+
+        public MemoryStream DecryptInMemoryMS(Stream inputData, Stream keyIn, string passCode)
+        {
+            byte[] error = Encoding.ASCII.GetBytes("ERROR");
+
+            Stream inputStream = inputData;
+            inputStream = PgpUtilities.GetDecoderStream(inputStream);
+            MemoryStream decoded = new MemoryStream();
+
+            try
+            {
+                PgpObjectFactory pgpF = new PgpObjectFactory(inputStream);
+                PgpEncryptedDataList enc;
+                PgpObject o = pgpF.NextPgpObject();
+
+                //
+                // the first object might be a PGP marker packet.
+                //
+                if (o is PgpEncryptedDataList)
+                    enc = (PgpEncryptedDataList)o;
+                else
+                    enc = (PgpEncryptedDataList)pgpF.NextPgpObject();
+
+                //
+                // find the secret key
+                //
+                PgpPrivateKey sKey = null;
+                PgpPublicKeyEncryptedData pbe = null;
+                PgpSecretKeyRingBundle pgpSec = new PgpSecretKeyRingBundle(
+                PgpUtilities.GetDecoderStream(keyIn));
+                foreach (PgpPublicKeyEncryptedData pked in enc.GetEncryptedDataObjects())
+                {
+                    sKey = FindSecretKey(pgpSec, pked.KeyId, passCode.ToCharArray());
+                    if (sKey != null)
+                    {
+                        pbe = pked;
+                        break;
+                    }
+                }
+                if (sKey == null)
+                    throw new ArgumentException("secret key for message not found.");
+
+                Stream clear = pbe.GetDataStream(sKey);
+                PgpObjectFactory plainFact = new PgpObjectFactory(clear);
+                PgpObject message = plainFact.NextPgpObject();
+
+                if (message is PgpCompressedData)
+                {
+                    PgpCompressedData cData = (PgpCompressedData)message;
+                    PgpObjectFactory pgpFact = new PgpObjectFactory(cData.GetDataStream());
+                    message = pgpFact.NextPgpObject();
+                }
+                if (message is PgpLiteralData)
+                {
+                    PgpLiteralData ld = (PgpLiteralData)message;
+                    Stream unc = ld.GetInputStream();
+                    Streams.PipeAll(unc, decoded);
+                }
+                else if (message is PgpOnePassSignatureList)
+                    throw new PgpException("encrypted message contains a signed message - not literal data.");
+                else
+                    throw new PgpException("message is not a simple encrypted file - type unknown.");
+
+                return decoded;
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+        }
+
+        public string DecryptInMemoryToString(Stream inputData, Stream keyIn, string passCode)
+        {
+            byte[] error = Encoding.ASCII.GetBytes("ERROR");
+
+            Stream inputStream = inputData;
+            inputStream = PgpUtilities.GetDecoderStream(inputStream);
+            MemoryStream decoded = new MemoryStream();
+
+            try
+            {
+                PgpObjectFactory pgpF = new PgpObjectFactory(inputStream);
+                PgpEncryptedDataList enc;
+                PgpObject o = pgpF.NextPgpObject();
+
+                //
+                // the first object might be a PGP marker packet.
+                //
+                if (o is PgpEncryptedDataList)
+                    enc = (PgpEncryptedDataList)o;
+                else
+                    enc = (PgpEncryptedDataList)pgpF.NextPgpObject();
+
+                //
+                // find the secret key
+                //
+                PgpPrivateKey sKey = null;
+                PgpPublicKeyEncryptedData pbe = null;
+                PgpSecretKeyRingBundle pgpSec = new PgpSecretKeyRingBundle(
+                PgpUtilities.GetDecoderStream(keyIn));
+                foreach (PgpPublicKeyEncryptedData pked in enc.GetEncryptedDataObjects())
+                {
+                    sKey = FindSecretKey(pgpSec, pked.KeyId, passCode.ToCharArray());
+                    if (sKey != null)
+                    {
+                        pbe = pked;
+                        break;
+                    }
+                }
+                if (sKey == null)
+                    throw new ArgumentException("secret key for message not found.");
+
+                Stream clear = pbe.GetDataStream(sKey);
+                PgpObjectFactory plainFact = new PgpObjectFactory(clear);
+                PgpObject message = plainFact.NextPgpObject();
+
+                if (message is PgpCompressedData)
+                {
+                    PgpCompressedData cData = (PgpCompressedData)message;
+                    PgpObjectFactory pgpFact = new PgpObjectFactory(cData.GetDataStream());
+                    message = pgpFact.NextPgpObject();
+                }
+                if (message is PgpLiteralData)
+                {
+                    PgpLiteralData ld = (PgpLiteralData)message;
+                    Stream unc = ld.GetInputStream();
+                    Streams.PipeAll(unc, decoded);
+                }
+                else if (message is PgpOnePassSignatureList)
+                    throw new PgpException("encrypted message contains a signed message - not literal data.");
+                else
+                    throw new PgpException("message is not a simple encrypted file - type unknown.");
+
+                StreamReader reader = new StreamReader(decoded);
+                return reader.ReadToEnd();
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
         }
 
         /*
@@ -616,9 +949,11 @@ namespace Cinchoo.PGP
                 throw new PgpException("Message is not a simple encrypted file.");
         }
 
-#endregion Decrypt
 
-#region DecryptFileAndVerify
+
+        #endregion Decrypt
+
+        #region DecryptFileAndVerify
 
         public async Task DecryptFileAndVerifyAsync(string inputFilePath, string outputFilePath, string publicKeyFilePath, string privateKeyFilePath, string passPhrase)
         {
@@ -688,13 +1023,31 @@ namespace Cinchoo.PGP
             return;
         }
 
-#endregion DecryptFileAndVerify
+        #endregion DecryptFileAndVerify
 
-#region DecryptAndVerify
+        #region DecryptAndVerify
 
         public async Task DecryptAndVerifyAsync(Stream inputStream, Stream outputStream, string publicKeyFilePath, string privateKeyFilePath, string passPhrase)
         {
-            await Task.Run(() => DecryptAndVerify(inputStream, outputStream, File.OpenRead(publicKeyFilePath), File.OpenRead(privateKeyFilePath), passPhrase));
+            if (String.IsNullOrEmpty(publicKeyFilePath))
+                throw new ArgumentException(nameof(publicKeyFilePath));
+            if (String.IsNullOrEmpty(privateKeyFilePath))
+                throw new ArgumentException(nameof(privateKeyFilePath));
+            if (!File.Exists(publicKeyFilePath))
+                throw new FileNotFoundException(String.Format("Public Key File [{0}] not found.", publicKeyFilePath));
+            if (!File.Exists(privateKeyFilePath))
+                throw new FileNotFoundException(String.Format("Private Key File [{0}] not found.", privateKeyFilePath));
+
+            await Task.Run(() =>
+            {
+                using (Stream pkStream = File.OpenRead(publicKeyFilePath))
+                {
+                    using (Stream keyStream = File.OpenRead(privateKeyFilePath))
+                    {
+                        DecryptAndVerify(inputStream, outputStream, pkStream, keyStream, passPhrase);
+                    }
+                }
+            });
         }
 
         public async Task DecryptAndVerifyAsync(Stream inputStream, Stream outputStream, Stream publicKeyStream, Stream privateKeyStream, string passPhrase)
@@ -704,7 +1057,41 @@ namespace Cinchoo.PGP
 
         public void DecryptAndVerify(Stream inputStream, Stream outputStream, string publicKeyFilePath, string privateKeyFilePath, string passPhrase)
         {
-            DecryptAndVerify(inputStream, outputStream, File.OpenRead(publicKeyFilePath), File.OpenRead(privateKeyFilePath), passPhrase);
+            if (String.IsNullOrEmpty(publicKeyFilePath))
+                throw new ArgumentException(nameof(publicKeyFilePath));
+            if (String.IsNullOrEmpty(privateKeyFilePath))
+                throw new ArgumentException(nameof(privateKeyFilePath));
+            if (!File.Exists(publicKeyFilePath))
+                throw new FileNotFoundException(String.Format("Public Key File [{0}] not found.", publicKeyFilePath));
+            if (!File.Exists(privateKeyFilePath))
+                throw new FileNotFoundException(String.Format("Private Key File [{0}] not found.", privateKeyFilePath));
+
+            using (Stream pkStream = File.OpenRead(publicKeyFilePath))
+            {
+                using (Stream keyStream = File.OpenRead(privateKeyFilePath))
+                {
+                    DecryptAndVerify(inputStream, outputStream, pkStream, keyStream, passPhrase);
+                }
+            }
+        }
+        public Stream DecryptAndVerifyInMemory(Stream inputStream, Stream outputStream, string publicKeyFilePath, string privateKeyFilePath, string passPhrase)
+        {
+            if (String.IsNullOrEmpty(publicKeyFilePath))
+                throw new ArgumentException(nameof(publicKeyFilePath));
+            if (String.IsNullOrEmpty(privateKeyFilePath))
+                throw new ArgumentException(nameof(privateKeyFilePath));
+            if (!File.Exists(publicKeyFilePath))
+                throw new FileNotFoundException(String.Format("Public Key File [{0}] not found.", publicKeyFilePath));
+            if (!File.Exists(privateKeyFilePath))
+                throw new FileNotFoundException(String.Format("Private Key File [{0}] not found.", privateKeyFilePath));
+
+            using (Stream pkStream = File.OpenRead(publicKeyFilePath))
+            {
+                using (Stream keyStream = File.OpenRead(privateKeyFilePath))
+                {
+                    return DecryptAndVerifyInMemory(inputStream, outputStream, pkStream, keyStream, passPhrase);
+                }
+            }
         }
 
         public void DecryptAndVerify(Stream inputStream, Stream outputStream, Stream publicKeyStream, Stream privateKeyStream, string passPhrase)
@@ -754,9 +1141,56 @@ namespace Cinchoo.PGP
             return;
         }
 
-#endregion DecryptAndVerify
+        public Stream DecryptAndVerifyInMemory(Stream inputStream, Stream outputStream, Stream publicKeyStream, Stream privateKeyStream, string passPhrase)
+        {
+            if (inputStream == null)
+                throw new ArgumentException(nameof(inputStream));
+            if (outputStream == null)
+                throw new ArgumentException(nameof(outputStream));
+            if (publicKeyStream == null)
+                throw new ArgumentException(nameof(publicKeyStream));
+            if (privateKeyStream == null)
+                throw new ArgumentException(nameof(privateKeyStream));
+            if (passPhrase == null)
+                passPhrase = String.Empty;
 
-#region GenerateKey
+            ChoPGPEncryptionKeys encryptionKeys = new ChoPGPEncryptionKeys(publicKeyStream, privateKeyStream, passPhrase);
+
+            if (encryptionKeys == null)
+                throw new ArgumentNullException("Encryption Key not found.");
+
+            PgpPublicKeyEncryptedData publicKeyED = ExtractPublicKeyEncryptedDataInMemory(inputStream);
+            if (publicKeyED.KeyId != encryptionKeys.PublicKey.KeyId)
+                throw new PgpException(String.Format("Failed to verify file."));
+
+            PgpObject message = GetClearCompressedMessage(publicKeyED, encryptionKeys);
+
+            if (message is PgpCompressedData)
+            {
+                message = ProcessCompressedMessage(message);
+                PgpLiteralData literalData = (PgpLiteralData)message;
+                using (Stream literalDataStream = literalData.GetInputStream())
+                {
+                    Streams.PipeAll(literalDataStream, outputStream);
+                }
+            }
+            else if (message is PgpLiteralData)
+            {
+                PgpLiteralData literalData = (PgpLiteralData)message;
+                using (Stream literalDataStream = literalData.GetInputStream())
+                {
+                    Streams.PipeAll(literalDataStream, outputStream);
+                }
+            }
+            else
+                throw new PgpException("Message is not a simple encrypted file.");
+
+            return outputStream;
+        }
+
+        #endregion DecryptAndVerify
+
+        #region GenerateKey
 
         public async Task GenerateKeyAsync(string publicKeyFilePath, string privateKeyFilePath, string username = null, string password = null, int strength = 1024, int certainty = 8)
         {
@@ -787,9 +1221,9 @@ namespace Cinchoo.PGP
             ExportKeyPair(privateKeyStream, publicKeyStream, kp.Public, kp.Private, username, password.ToCharArray(), armor);
         }
 
-#endregion GenerateKey
+        #endregion GenerateKey
 
-#region Private helpers
+        #region Private helpers
 
         private string GetFileName(Stream stream)
         {
@@ -916,6 +1350,13 @@ namespace Cinchoo.PGP
             PgpPublicKeyEncryptedData publicKeyED = ExtractPublicKey(encryptedDataList);
             return publicKeyED;
         }
+        private static PgpPublicKeyEncryptedData ExtractPublicKeyEncryptedDataInMemory(Stream inputData)
+        {
+
+            PgpEncryptedDataList encryptedDataList = GetEncryptedDataListInMemory(inputData);
+            PgpPublicKeyEncryptedData publicKeyED = ExtractPublicKey(encryptedDataList);
+            return publicKeyED;
+        }
         private static PgpObject ProcessCompressedMessage(PgpObject message)
         {
             PgpCompressedData compressedData = (PgpCompressedData)message;
@@ -977,11 +1418,29 @@ namespace Cinchoo.PGP
             }
             return encryptedDataList;
         }
+        private static PgpEncryptedDataList GetEncryptedDataListInMemory(Stream inputData)
+        {
+            byte[] inputStream = ((MemoryStream)inputData).ToArray();
+            Stream ms = new MemoryStream(inputStream);
+            ms = PgpUtilities.GetDecoderStream(ms);
+            PgpObjectFactory pgpF = new PgpObjectFactory(ms);
+            PgpEncryptedDataList enc;
+            PgpObject o = pgpF.NextPgpObject();
+
+            //
+            // the first object might be a PGP marker packet.
+            //
+            if (o is PgpEncryptedDataList)
+                enc = (PgpEncryptedDataList)o;
+            else
+                enc = (PgpEncryptedDataList)pgpF.NextPgpObject();
+            return enc;
+        }
         public void Dispose()
         {
         }
 
-#endregion Private helpers
+        #endregion Private helpers
     }
 
 }

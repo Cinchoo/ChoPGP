@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
-    <Authors>Raj Nagalingam</Authors>
+    <Authors>Cinchoo</Authors>
     <Copyright>Copyright 2018 Cinchoo Inc</Copyright>
     <PackageTags>PGP .NET c#</PackageTags>
     <Description>PGP Library for .NET Core</Description>
@@ -14,6 +14,8 @@
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RepositoryUrl>https://github.com/Cinchoo/ChoPGP</RepositoryUrl>
+    <Version>1.0.0.3</Version>
+    <RepositoryType>GitHub</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
