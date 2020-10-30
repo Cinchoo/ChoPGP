@@ -159,7 +159,15 @@ namespace Cinchoo.PGP
         public async Task EncryptAsync(Stream inputStream, Stream outputStream, string publicKeyFilePath,
             bool armor = true, bool withIntegrityCheck = true)
         {
-            await Task.Run(() => Encrypt(inputStream, outputStream, File.OpenRead(publicKeyFilePath), armor, withIntegrityCheck));
+            if (String.IsNullOrEmpty(publicKeyFilePath))
+                throw new ArgumentException(nameof(publicKeyFilePath));
+            if (!File.Exists(publicKeyFilePath))
+                throw new FileNotFoundException(String.Format("Public Key File [{0}] not found.", publicKeyFilePath));
+
+            await Task.Run(() => {
+                using (Stream pkStream = File.OpenRead(publicKeyFilePath))
+                    Encrypt(inputStream, outputStream, pkStream, armor, withIntegrityCheck);
+                });
         }
 
         public async Task EncryptAsync(Stream inputStream, Stream outputStream, Stream publicKeyStream,
@@ -171,7 +179,13 @@ namespace Cinchoo.PGP
         public void Encrypt(Stream inputStream, Stream outputStream, string publicKeyFilePath,
             bool armor = true, bool withIntegrityCheck = true)
         {
-            Encrypt(inputStream, outputStream, File.OpenRead(publicKeyFilePath),
+            if (String.IsNullOrEmpty(publicKeyFilePath))
+                throw new ArgumentException(nameof(publicKeyFilePath));
+            if (!File.Exists(publicKeyFilePath))
+                throw new FileNotFoundException(String.Format("Public Key File [{0}] not found.", publicKeyFilePath));
+
+            using (Stream pkStream = File.OpenRead(publicKeyFilePath))
+                Encrypt(inputStream, outputStream, pkStream,
                 armor, withIntegrityCheck);
         }
 
@@ -306,8 +320,25 @@ namespace Cinchoo.PGP
 
         public async Task EncryptAndSignAsync(Stream inputStream, Stream outputStream, string publicKeyFilePath, string privateKeyFilePath, string passPhrase, bool armor = true, bool withIntegrityCheck = true)
         {
-            await Task.Run(() => EncryptAndSignAsync(inputStream, outputStream, File.OpenRead(publicKeyFilePath),
-                File.OpenRead(privateKeyFilePath), passPhrase, armor, withIntegrityCheck));
+            if (String.IsNullOrEmpty(publicKeyFilePath))
+                throw new ArgumentException(nameof(publicKeyFilePath));
+            if (String.IsNullOrEmpty(privateKeyFilePath))
+                throw new ArgumentException(nameof(privateKeyFilePath));
+            if (!File.Exists(publicKeyFilePath))
+                throw new FileNotFoundException(String.Format("Public Key File [{0}] not found.", publicKeyFilePath));
+            if (!File.Exists(privateKeyFilePath))
+                throw new FileNotFoundException(String.Format("Private Key File [{0}] not found.", privateKeyFilePath));
+
+            await Task.Run(() => {
+                using (Stream pkStream = File.OpenRead(publicKeyFilePath))
+                {
+                    using (Stream keyStream = File.OpenRead(privateKeyFilePath))
+                    {
+                        EncryptAndSignAsync(inputStream, outputStream, pkStream,
+                            keyStream, passPhrase, armor, withIntegrityCheck);
+                    }
+                }
+                });
         }
 
         public async Task EncryptAndSignAsync(Stream inputStream, Stream outputStream, Stream publicKeyStream,
@@ -319,7 +350,22 @@ namespace Cinchoo.PGP
 
         public void EncryptAndSign(Stream inputStream, Stream outputStream, string publicKeyFilePath, string privateKeyFilePath, string passPhrase, bool armor = true, bool withIntegrityCheck = true)
         {
-            EncryptAndSign(inputStream, outputStream, File.OpenRead(publicKeyFilePath), File.OpenRead(privateKeyFilePath), passPhrase, armor, withIntegrityCheck);
+            if (String.IsNullOrEmpty(publicKeyFilePath))
+                throw new ArgumentException(nameof(publicKeyFilePath));
+            if (String.IsNullOrEmpty(privateKeyFilePath))
+                throw new ArgumentException(nameof(privateKeyFilePath));
+            if (!File.Exists(publicKeyFilePath))
+                throw new FileNotFoundException(String.Format("Public Key File [{0}] not found.", publicKeyFilePath));
+            if (!File.Exists(privateKeyFilePath))
+                throw new FileNotFoundException(String.Format("Private Key File [{0}] not found.", privateKeyFilePath));
+
+            using (Stream pkStream = File.OpenRead(publicKeyFilePath))
+            {
+                using (Stream keyStream = File.OpenRead(privateKeyFilePath))
+                {
+                    EncryptAndSign(inputStream, outputStream, pkStream, keyStream, passPhrase, armor, withIntegrityCheck);
+                }
+            }
         }
 
         /// <summary>
@@ -500,7 +546,16 @@ namespace Cinchoo.PGP
 
         public async Task DecryptAsync(Stream inputStream, Stream outputStream, string privateKeyFilePath, string passPhrase)
         {
-            await Task.Run(() => Decrypt(inputStream, outputStream, File.OpenRead(privateKeyFilePath), passPhrase));
+            if (String.IsNullOrEmpty(privateKeyFilePath))
+                throw new ArgumentException(nameof(privateKeyFilePath));
+            if (!File.Exists(privateKeyFilePath))
+                throw new FileNotFoundException(String.Format("Private Key File [{0}] not found.", privateKeyFilePath));
+
+            await Task.Run(() =>
+            {
+                using (Stream keyStream = File.OpenRead(privateKeyFilePath))
+                    Decrypt(inputStream, outputStream, keyStream, passPhrase);
+            });
         }
 
         public async Task DecryptAsync(Stream inputStream, Stream outputStream, Stream privateKeyStream, string passPhrase)
@@ -510,7 +565,8 @@ namespace Cinchoo.PGP
 
         public void Decrypt(Stream inputStream, Stream outputStream, string privateKeyFilePath, string passPhrase)
         {
-            Decrypt(inputStream, outputStream, File.OpenRead(privateKeyFilePath), passPhrase);
+            using (Stream keyStream = File.OpenRead(privateKeyFilePath))
+                Decrypt(inputStream, outputStream, keyStream, passPhrase);
         }
 
         public byte[] DecryptInMemory(byte[] inputData, Stream keyIn, string passCode)
@@ -817,8 +873,6 @@ namespace Cinchoo.PGP
             if (objFactory != null)
                 obj = objFactory.NextPgpObject();
 
-
-
             // the first object might be a PGP marker packet.
             PgpEncryptedDataList enc = null;
             if (obj is PgpEncryptedDataList)
@@ -975,7 +1029,25 @@ namespace Cinchoo.PGP
 
         public async Task DecryptAndVerifyAsync(Stream inputStream, Stream outputStream, string publicKeyFilePath, string privateKeyFilePath, string passPhrase)
         {
-            await Task.Run(() => DecryptAndVerify(inputStream, outputStream, File.OpenRead(publicKeyFilePath), File.OpenRead(privateKeyFilePath), passPhrase));
+            if (String.IsNullOrEmpty(publicKeyFilePath))
+                throw new ArgumentException(nameof(publicKeyFilePath));
+            if (String.IsNullOrEmpty(privateKeyFilePath))
+                throw new ArgumentException(nameof(privateKeyFilePath));
+            if (!File.Exists(publicKeyFilePath))
+                throw new FileNotFoundException(String.Format("Public Key File [{0}] not found.", publicKeyFilePath));
+            if (!File.Exists(privateKeyFilePath))
+                throw new FileNotFoundException(String.Format("Private Key File [{0}] not found.", privateKeyFilePath));
+
+            await Task.Run(() =>
+            {
+                using (Stream pkStream = File.OpenRead(publicKeyFilePath))
+                {
+                    using (Stream keyStream = File.OpenRead(privateKeyFilePath))
+                    {
+                        DecryptAndVerify(inputStream, outputStream, pkStream, keyStream, passPhrase);
+                    }
+                }
+            });
         }
 
         public async Task DecryptAndVerifyAsync(Stream inputStream, Stream outputStream, Stream publicKeyStream, Stream privateKeyStream, string passPhrase)
@@ -985,11 +1057,41 @@ namespace Cinchoo.PGP
 
         public void DecryptAndVerify(Stream inputStream, Stream outputStream, string publicKeyFilePath, string privateKeyFilePath, string passPhrase)
         {
-            DecryptAndVerify(inputStream, outputStream, File.OpenRead(publicKeyFilePath), File.OpenRead(privateKeyFilePath), passPhrase);
+            if (String.IsNullOrEmpty(publicKeyFilePath))
+                throw new ArgumentException(nameof(publicKeyFilePath));
+            if (String.IsNullOrEmpty(privateKeyFilePath))
+                throw new ArgumentException(nameof(privateKeyFilePath));
+            if (!File.Exists(publicKeyFilePath))
+                throw new FileNotFoundException(String.Format("Public Key File [{0}] not found.", publicKeyFilePath));
+            if (!File.Exists(privateKeyFilePath))
+                throw new FileNotFoundException(String.Format("Private Key File [{0}] not found.", privateKeyFilePath));
+
+            using (Stream pkStream = File.OpenRead(publicKeyFilePath))
+            {
+                using (Stream keyStream = File.OpenRead(privateKeyFilePath))
+                {
+                    DecryptAndVerify(inputStream, outputStream, pkStream, keyStream, passPhrase);
+                }
+            }
         }
         public Stream DecryptAndVerifyInMemory(Stream inputStream, Stream outputStream, string publicKeyFilePath, string privateKeyFilePath, string passPhrase)
         {
-            return DecryptAndVerifyInMemory(inputStream, outputStream, File.OpenRead(publicKeyFilePath), File.OpenRead(privateKeyFilePath), passPhrase);
+            if (String.IsNullOrEmpty(publicKeyFilePath))
+                throw new ArgumentException(nameof(publicKeyFilePath));
+            if (String.IsNullOrEmpty(privateKeyFilePath))
+                throw new ArgumentException(nameof(privateKeyFilePath));
+            if (!File.Exists(publicKeyFilePath))
+                throw new FileNotFoundException(String.Format("Public Key File [{0}] not found.", publicKeyFilePath));
+            if (!File.Exists(privateKeyFilePath))
+                throw new FileNotFoundException(String.Format("Private Key File [{0}] not found.", privateKeyFilePath));
+
+            using (Stream pkStream = File.OpenRead(publicKeyFilePath))
+            {
+                using (Stream keyStream = File.OpenRead(privateKeyFilePath))
+                {
+                    return DecryptAndVerifyInMemory(inputStream, outputStream, pkStream, keyStream, passPhrase);
+                }
+            }
         }
 
         public void DecryptAndVerify(Stream inputStream, Stream outputStream, Stream publicKeyStream, Stream privateKeyStream, string passPhrase)
