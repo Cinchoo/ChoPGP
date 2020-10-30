@@ -334,7 +334,7 @@ namespace Cinchoo.PGP
                 {
                     using (Stream keyStream = File.OpenRead(privateKeyFilePath))
                     {
-                        EncryptAndSignAsync(inputStream, outputStream, pkStream,
+                        EncryptAndSign(inputStream, outputStream, pkStream,
                             keyStream, passPhrase, armor, withIntegrityCheck);
                     }
                 }
@@ -569,86 +569,76 @@ namespace Cinchoo.PGP
                 Decrypt(inputStream, outputStream, keyStream, passPhrase);
         }
 
-        public byte[] DecryptInMemory(byte[] inputData, Stream keyIn, string passCode)
+        public MemoryStream DecryptInMemory(byte[] inputData, Stream keyIn, string passCode)
         {
-            byte[] error = Encoding.ASCII.GetBytes("ERROR");
-
-            Stream inputStream = new MemoryStream(inputData);
-            inputStream = PgpUtilities.GetDecoderStream(inputStream);
-            MemoryStream decoded = new MemoryStream();
-
-            try
+            using (Stream inputStream1 = new MemoryStream(inputData))
             {
-                PgpObjectFactory pgpF = new PgpObjectFactory(inputStream);
-                PgpEncryptedDataList enc;
-                PgpObject o = pgpF.NextPgpObject();
-
-                //
-                // the first object might be a PGP marker packet.
-                //
-                if (o is PgpEncryptedDataList)
-                    enc = (PgpEncryptedDataList)o;
-                else
-                    enc = (PgpEncryptedDataList)pgpF.NextPgpObject();
-
-                //
-                // find the secret key
-                //
-                PgpPrivateKey sKey = null;
-                PgpPublicKeyEncryptedData pbe = null;
-                PgpSecretKeyRingBundle pgpSec = new PgpSecretKeyRingBundle(
-                PgpUtilities.GetDecoderStream(keyIn));
-                foreach (PgpPublicKeyEncryptedData pked in enc.GetEncryptedDataObjects())
+                using (Stream inputStream = PgpUtilities.GetDecoderStream(inputStream1))
                 {
-                    sKey = FindSecretKey(pgpSec, pked.KeyId, passCode.ToCharArray());
-                    if (sKey != null)
+                    MemoryStream decoded = new MemoryStream();
+
+                    PgpObjectFactory pgpF = new PgpObjectFactory(inputStream);
+                    PgpEncryptedDataList enc;
+                    PgpObject o = pgpF.NextPgpObject();
+
+                    //
+                    // the first object might be a PGP marker packet.
+                    //
+                    if (o is PgpEncryptedDataList)
+                        enc = (PgpEncryptedDataList)o;
+                    else
+                        enc = (PgpEncryptedDataList)pgpF.NextPgpObject();
+
+                    //
+                    // find the secret key
+                    //
+                    PgpPrivateKey sKey = null;
+                    PgpPublicKeyEncryptedData pbe = null;
+                    PgpSecretKeyRingBundle pgpSec = new PgpSecretKeyRingBundle(PgpUtilities.GetDecoderStream(keyIn));
+                    foreach (PgpPublicKeyEncryptedData pked in enc.GetEncryptedDataObjects())
                     {
-                        pbe = pked;
-                        break;
+                        sKey = FindSecretKey(pgpSec, pked.KeyId, passCode.ToCharArray());
+                        if (sKey != null)
+                        {
+                            pbe = pked;
+                            break;
+                        }
                     }
-                }
-                if (sKey == null)
-                    throw new ArgumentException("secret key for message not found.");
+                    if (sKey == null)
+                        throw new ArgumentException("Secret key for message not found.");
 
-                Stream clear = pbe.GetDataStream(sKey);
-                PgpObjectFactory plainFact = new PgpObjectFactory(clear);
-                PgpObject message = plainFact.NextPgpObject();
+                    Stream clear = pbe.GetDataStream(sKey);
+                    PgpObjectFactory plainFact = new PgpObjectFactory(clear);
+                    PgpObject message = plainFact.NextPgpObject();
 
-                if (message is PgpCompressedData)
-                {
-                    PgpCompressedData cData = (PgpCompressedData)message;
-                    PgpObjectFactory pgpFact = new PgpObjectFactory(cData.GetDataStream());
-                    message = pgpFact.NextPgpObject();
-                }
-                if (message is PgpLiteralData)
-                {
-                    PgpLiteralData ld = (PgpLiteralData)message;
-                    Stream unc = ld.GetInputStream();
-                    Streams.PipeAll(unc, decoded);
-                }
-                else if (message is PgpOnePassSignatureList)
-                    throw new PgpException("encrypted message contains a signed message - not literal data.");
-                else
-                    throw new PgpException("message is not a simple encrypted file - type unknown.");
+                    if (message is PgpCompressedData)
+                    {
+                        PgpCompressedData cData = (PgpCompressedData)message;
+                        PgpObjectFactory pgpFact = new PgpObjectFactory(cData.GetDataStream());
+                        message = pgpFact.NextPgpObject();
+                    }
+                    if (message is PgpLiteralData)
+                    {
+                        PgpLiteralData ld = (PgpLiteralData)message;
+                        Stream unc = ld.GetInputStream();
+                        Streams.PipeAll(unc, decoded);
+                    }
+                    else if (message is PgpOnePassSignatureList)
+                        throw new PgpException("Encrypted message contains a signed message - not literal data.");
+                    else
+                        throw new PgpException("Message is not a simple encrypted file - type unknown.");
 
-                return decoded.ToArray();
-            }
-            catch (Exception e)
-            {
-                throw e;
+                    return decoded;
+                }
             }
         }
 
-        public MemoryStream DecryptInMemoryMS(byte[] inputData, Stream keyIn, string passCode)
+        public MemoryStream DecryptInMemory(Stream inputData, Stream keyIn, string passCode)
         {
-            byte[] error = Encoding.ASCII.GetBytes("ERROR");
-
-            Stream inputStream = new MemoryStream(inputData);
-            inputStream = PgpUtilities.GetDecoderStream(inputStream);
-            MemoryStream decoded = new MemoryStream();
-
-            try
+            using (Stream inputStream = PgpUtilities.GetDecoderStream(inputData))
             {
+                MemoryStream decoded = new MemoryStream();
+
                 PgpObjectFactory pgpF = new PgpObjectFactory(inputStream);
                 PgpEncryptedDataList enc;
                 PgpObject o = pgpF.NextPgpObject();
@@ -678,7 +668,7 @@ namespace Cinchoo.PGP
                     }
                 }
                 if (sKey == null)
-                    throw new ArgumentException("secret key for message not found.");
+                    throw new ArgumentException("Secret key for message not found.");
 
                 Stream clear = pbe.GetDataStream(sKey);
                 PgpObjectFactory plainFact = new PgpObjectFactory(clear);
@@ -697,29 +687,86 @@ namespace Cinchoo.PGP
                     Streams.PipeAll(unc, decoded);
                 }
                 else if (message is PgpOnePassSignatureList)
-                    throw new PgpException("encrypted message contains a signed message - not literal data.");
+                    throw new PgpException("Encrypted message contains a signed message - not literal data.");
                 else
-                    throw new PgpException("message is not a simple encrypted file - type unknown.");
-
+                    throw new PgpException("Message is not a simple encrypted file - type unknown.");
 
                 return decoded;
             }
-            catch (Exception e)
+        }
+
+        public byte[] Decrypt(byte[] inputData, Stream keyIn, string passCode)
+        {
+            using (Stream inputStream1 = new MemoryStream(inputData))
             {
-                throw e;
+                using (Stream inputStream = PgpUtilities.GetDecoderStream(inputStream1))
+                {
+                    using (MemoryStream decoded = new MemoryStream())
+                    {
+                        PgpObjectFactory pgpF = new PgpObjectFactory(inputStream);
+                        PgpEncryptedDataList enc;
+                        PgpObject o = pgpF.NextPgpObject();
+
+                        //
+                        // the first object might be a PGP marker packet.
+                        //
+                        if (o is PgpEncryptedDataList)
+                            enc = (PgpEncryptedDataList)o;
+                        else
+                            enc = (PgpEncryptedDataList)pgpF.NextPgpObject();
+
+                        //
+                        // find the secret key
+                        //
+                        PgpPrivateKey sKey = null;
+                        PgpPublicKeyEncryptedData pbe = null;
+                        PgpSecretKeyRingBundle pgpSec = new PgpSecretKeyRingBundle(
+                        PgpUtilities.GetDecoderStream(keyIn));
+                        foreach (PgpPublicKeyEncryptedData pked in enc.GetEncryptedDataObjects())
+                        {
+                            sKey = FindSecretKey(pgpSec, pked.KeyId, passCode.ToCharArray());
+                            if (sKey != null)
+                            {
+                                pbe = pked;
+                                break;
+                            }
+                        }
+                        if (sKey == null)
+                            throw new PgpException("Secret key for message not found.");
+
+                        Stream clear = pbe.GetDataStream(sKey);
+                        PgpObjectFactory plainFact = new PgpObjectFactory(clear);
+                        PgpObject message = plainFact.NextPgpObject();
+
+                        if (message is PgpCompressedData)
+                        {
+                            PgpCompressedData cData = (PgpCompressedData)message;
+                            PgpObjectFactory pgpFact = new PgpObjectFactory(cData.GetDataStream());
+                            message = pgpFact.NextPgpObject();
+                        }
+                        if (message is PgpLiteralData)
+                        {
+                            PgpLiteralData ld = (PgpLiteralData)message;
+                            Stream unc = ld.GetInputStream();
+                            Streams.PipeAll(unc, decoded);
+                        }
+                        else if (message is PgpOnePassSignatureList)
+                            throw new PgpException("Encrypted message contains a signed message - not literal data.");
+                        else
+                            throw new PgpException("Message is not a simple encrypted file - type unknown.");
+
+                        return decoded.ToArray();
+                    }
+                }
             }
         }
 
-        public MemoryStream DecryptInMemoryMS(Stream inputData, Stream keyIn, string passCode)
+        public string DecryptToText(Stream inputData, Stream keyIn, string passCode)
         {
-            byte[] error = Encoding.ASCII.GetBytes("ERROR");
-
-            Stream inputStream = inputData;
-            inputStream = PgpUtilities.GetDecoderStream(inputStream);
-            MemoryStream decoded = new MemoryStream();
-
-            try
+            using (Stream inputStream = PgpUtilities.GetDecoderStream(inputData))
             {
+                MemoryStream decoded = new MemoryStream();
+
                 PgpObjectFactory pgpF = new PgpObjectFactory(inputStream);
                 PgpEncryptedDataList enc;
                 PgpObject o = pgpF.NextPgpObject();
@@ -749,7 +796,7 @@ namespace Cinchoo.PGP
                     }
                 }
                 if (sKey == null)
-                    throw new ArgumentException("secret key for message not found.");
+                    throw new ArgumentException("Secret key for message not found.");
 
                 Stream clear = pbe.GetDataStream(sKey);
                 PgpObjectFactory plainFact = new PgpObjectFactory(clear);
@@ -768,86 +815,12 @@ namespace Cinchoo.PGP
                     Streams.PipeAll(unc, decoded);
                 }
                 else if (message is PgpOnePassSignatureList)
-                    throw new PgpException("encrypted message contains a signed message - not literal data.");
+                    throw new PgpException("Encrypted message contains a signed message - not literal data.");
                 else
-                    throw new PgpException("message is not a simple encrypted file - type unknown.");
-
-                return decoded;
-            }
-            catch (Exception e)
-            {
-                throw e;
-            }
-        }
-
-        public string DecryptInMemoryToString(Stream inputData, Stream keyIn, string passCode)
-        {
-            byte[] error = Encoding.ASCII.GetBytes("ERROR");
-
-            Stream inputStream = inputData;
-            inputStream = PgpUtilities.GetDecoderStream(inputStream);
-            MemoryStream decoded = new MemoryStream();
-
-            try
-            {
-                PgpObjectFactory pgpF = new PgpObjectFactory(inputStream);
-                PgpEncryptedDataList enc;
-                PgpObject o = pgpF.NextPgpObject();
-
-                //
-                // the first object might be a PGP marker packet.
-                //
-                if (o is PgpEncryptedDataList)
-                    enc = (PgpEncryptedDataList)o;
-                else
-                    enc = (PgpEncryptedDataList)pgpF.NextPgpObject();
-
-                //
-                // find the secret key
-                //
-                PgpPrivateKey sKey = null;
-                PgpPublicKeyEncryptedData pbe = null;
-                PgpSecretKeyRingBundle pgpSec = new PgpSecretKeyRingBundle(
-                PgpUtilities.GetDecoderStream(keyIn));
-                foreach (PgpPublicKeyEncryptedData pked in enc.GetEncryptedDataObjects())
-                {
-                    sKey = FindSecretKey(pgpSec, pked.KeyId, passCode.ToCharArray());
-                    if (sKey != null)
-                    {
-                        pbe = pked;
-                        break;
-                    }
-                }
-                if (sKey == null)
-                    throw new ArgumentException("secret key for message not found.");
-
-                Stream clear = pbe.GetDataStream(sKey);
-                PgpObjectFactory plainFact = new PgpObjectFactory(clear);
-                PgpObject message = plainFact.NextPgpObject();
-
-                if (message is PgpCompressedData)
-                {
-                    PgpCompressedData cData = (PgpCompressedData)message;
-                    PgpObjectFactory pgpFact = new PgpObjectFactory(cData.GetDataStream());
-                    message = pgpFact.NextPgpObject();
-                }
-                if (message is PgpLiteralData)
-                {
-                    PgpLiteralData ld = (PgpLiteralData)message;
-                    Stream unc = ld.GetInputStream();
-                    Streams.PipeAll(unc, decoded);
-                }
-                else if (message is PgpOnePassSignatureList)
-                    throw new PgpException("encrypted message contains a signed message - not literal data.");
-                else
-                    throw new PgpException("message is not a simple encrypted file - type unknown.");
+                    throw new PgpException("Message is not a simple encrypted file - type unknown.");
 
                 StreamReader reader = new StreamReader(decoded);
                 return reader.ReadToEnd();
-            }
-            catch (Exception e)
-            {
-                throw e;
             }
         }
 
