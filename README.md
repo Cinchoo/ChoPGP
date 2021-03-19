@@ -19,7 +19,7 @@ To install Cinchoo PGP, run the following command in the Package Manager Console
 Add namespace to the program
 
 ``` csharp
-    using Cinchoo.PGP;
+using Cinchoo.PGP;
 ```
 # How to use
 
@@ -41,10 +41,10 @@ where:
 #### Sample 
 
 ``` csharp
-    using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
-    {
-        pgp.EncryptFile("SampleData.txt", "SampleData.PGP", "Pub.asc", true, false);
-    }
+using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
+{
+    pgp.EncryptFile("SampleData.txt", "SampleData.PGP", "Pub.asc", true, false);
+}
 ```
 
 ## 2. To PGP encrypt and Sign a file
@@ -66,10 +66,10 @@ where:
 
 #### Sample 
 ``` csharp
-    using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
-    {
-        pgp.EncryptFileNSign("SampleData.txt", "SampleData.PGP", "Pub.asc", "Pri.asc", "Test123", true, false);
-    }
+using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
+{
+    pgp.EncryptFileNSign("SampleData.txt", "SampleData.PGP", "Pub.asc", "Pri.asc", "Test123", true, false);
+}
 ```
 ## 3. To PGP decrypt a file
 
@@ -87,10 +87,10 @@ where:
 
 #### Sample 
 ``` csharp
-    using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
-    {
-        pgp.DecryptFile("SampleData.PGP", "SampleData.OUT", "Pri.asc", "Test123");
-    }
+using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
+{
+    pgp.DecryptFile("SampleData.PGP", "SampleData.OUT", "Pri.asc", "Test123");
+}
 ```
 ## 4. To PGP decrypt and Verify a file
 
@@ -109,10 +109,10 @@ where:
 
 #### Sample 
 ``` csharp
-    using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
-    {
-        pgp.DecryptFileNVerify("SampleData.PGP", "SampleData.OUT", "Pub.asc", "Pri.asc", "Test123");
-    }
+using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
+{
+    pgp.DecryptFileNVerify("SampleData.PGP", "SampleData.OUT", "Pub.asc", "Pri.asc", "Test123");
+}
 ```
 ## 5. Generate Public/Private Keyring
 
@@ -132,8 +132,8 @@ where:
 
 #### Sample 
 ``` csharp
-    using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
-        pgp.GenerateKey("pub.asc", "pri.asc", "mark@gmail.com", "Test123");
+using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
+    pgp.GenerateKey("pub.asc", "pri.asc", "mark@gmail.com", "Test123");
 ```
 
 If this project help you reduce time to develop, you can give me a cup of coffee :)
