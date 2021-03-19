@@ -19,7 +19,7 @@ To install Cinchoo PGP, run the following command in the Package Manager Console
 Add namespace to the program
 
 ``` csharp
-    using ChoPGP;
+    using Cinchoo.PGP;
 ```
 # How to use
 
