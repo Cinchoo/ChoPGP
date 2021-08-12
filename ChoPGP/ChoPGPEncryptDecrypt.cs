@@ -819,6 +819,7 @@ namespace Cinchoo.PGP
                 else
                     throw new PgpException("Message is not a simple encrypted file - type unknown.");
 
+                decoded.Seek(0, SeekOrigin.Begin);
                 StreamReader reader = new StreamReader(decoded);
                 return reader.ReadToEnd();
             }
