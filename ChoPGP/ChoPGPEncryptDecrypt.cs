@@ -344,7 +344,7 @@ namespace Cinchoo.PGP
         public async Task EncryptAndSignAsync(Stream inputStream, Stream outputStream, Stream publicKeyStream,
             Stream privateKeyStream, string passPhrase, bool armor = true, bool withIntegrityCheck = true)
         {
-            await Task.Run(() => EncryptAndSignAsync(inputStream, outputStream, publicKeyStream,
+            await Task.Run(() => EncryptAndSign(inputStream, outputStream, publicKeyStream,
                 privateKeyStream, passPhrase, armor, withIntegrityCheck));
         }
 
