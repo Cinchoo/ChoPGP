@@ -14,7 +14,7 @@
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RepositoryUrl>https://github.com/Cinchoo/ChoPGP</RepositoryUrl>
-    <Version>1.0.0.3</Version>
+    <Version>1.0.0.4</Version>
     <RepositoryType>GitHub</RepositoryType>
   </PropertyGroup>
 
