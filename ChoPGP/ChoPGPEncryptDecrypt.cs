@@ -474,7 +474,7 @@ namespace Cinchoo.PGP
         private Stream ChainLiteralOut(Stream compressedOut, FileInfo file)
         {
             PgpLiteralDataGenerator pgpLiteralDataGenerator = new PgpLiteralDataGenerator();
-#if NETCOREAPP2_0
+#if NETCOREAPP2_0 || NETCOREAPP3_1
             return pgpLiteralDataGenerator.Open(compressedOut, FileTypeToChar(), file.Name, file.Length, DateTime.Now);
 #else
             return pgpLiteralDataGenerator.Open(compressedOut, FileTypeToChar(), file);
