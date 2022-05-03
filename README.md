@@ -138,4 +138,4 @@ using (ChoPGPEncryptDecrypt pgp = new ChoPGPEncryptDecrypt())
 
 If this project help you reduce time to develop, you can give me a cup of coffee :)
 
-[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=6S2UVXDPR63X8&source=url)
+[$10](https://buy.stripe.com/7sIdSt3Cg1OM8KIeV1)/[$25](https://buy.stripe.com/4gw3dP5KoeBy6CAcMR)/[$50](https://buy.stripe.com/28o15Hgp2gJG6CA4go)/[$100](https://buy.stripe.com/bIYbKl8WA2SQe523cl)
